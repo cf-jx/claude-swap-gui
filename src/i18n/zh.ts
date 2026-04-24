@@ -1,0 +1,58 @@
+export const zh = {
+  "header.noActive": "未检测到 Claude 登录",
+  "header.refresh": "刷新",
+  "header.settings": "设置",
+  "header.tokens": "总 Token",
+  "header.tokensInput": "输入",
+  "header.tokensOutput": "输出",
+  "header.tokensTitle": "本地 Claude Code 会话 Token 总量",
+  "header.cost": "总消耗",
+
+  "account.active": "使用中",
+  "account.refresh": "刷新该账户用量",
+  "account.remove": "移除账户",
+  "account.usageUnavailable": "用量数据暂不可用",
+  "account.noCredentials": "凭证缺失，切换到该账户后用「添加当前」刷新",
+  "toast.refreshed": "用量已刷新",
+  "toast.noCredentials": "该账户无凭证，先切换到它再点「添加当前」",
+
+  "action.add": "添加当前",
+  "action.switchNext": "切下一个",
+  "action.needTwo": "至少需要 2 个账户",
+
+  "toast.switched": "已切换到 {{email}}",
+  "toast.switchedNext": "已切到下一个账户",
+  "toast.added": "已添加账户",
+  "toast.addedSlot": "已添加为 Account-{{slot}}",
+  "toast.removed": "已移除 {{email}}",
+  "toast.confirmRemove": "确定移除账户 {{email}} ?",
+  "toast.actionFailed": "操作失败",
+
+  "empty.cswapMissing.title": "未检测到 cswap",
+  "empty.cswapMissing.desc": "可选：安装 claude-swap CLI 以便管理备份",
+  "empty.noLogin.title": "尚未登录 Claude Code",
+  "empty.noLogin.desc": "先在终端或 VS Code 扩展中登录 Claude Code",
+  "empty.noAccounts.title": "还没有托管账户",
+  "empty.noAccounts.desc": "把当前登录的 Claude 账户添加进来，下次切换一键搞定",
+  "empty.noAccounts.add": "添加当前账户",
+
+  "settings.title": "设置",
+  "settings.back": "返回",
+  "settings.language": "语言",
+  "settings.language.desc": "界面语言",
+  "settings.language.zh": "中文",
+  "settings.language.en": "English",
+  "settings.autostart": "开机自启",
+  "settings.autostart.desc": "登录系统后自动起托盘",
+  "settings.hotkey": "快捷键",
+  "settings.hotkey.desc": "全局触发「切到下一个账户」",
+  "settings.hotkey.press": "按组合键… (Esc 取消)",
+  "settings.hotkey.empty": "未设置",
+  "settings.poll": "轮询间隔",
+  "settings.poll.desc": "窗口可见时刷新用量数据",
+
+  "list.loading": "加载中…",
+  "list.readFailed": "读取失败：{{error}}",
+} as const;
+
+export type MessageKey = keyof typeof zh;

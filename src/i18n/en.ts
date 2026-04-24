@@ -1,0 +1,58 @@
+import type { MessageKey } from "./zh";
+
+export const en: Record<MessageKey, string> = {
+  "header.noActive": "no active Claude login",
+  "header.refresh": "Refresh",
+  "header.settings": "Settings",
+  "header.tokens": "Total tokens",
+  "header.tokensInput": "In",
+  "header.tokensOutput": "Out",
+  "header.tokensTitle": "Local Claude Code session token total",
+  "header.cost": "Cost",
+
+  "account.active": "active",
+  "account.refresh": "Refresh usage for this account",
+  "account.remove": "Remove account",
+  "account.usageUnavailable": "usage unavailable",
+  "account.noCredentials": "credentials missing — switch in then press Add current to refresh",
+  "toast.refreshed": "Usage refreshed",
+  "toast.noCredentials": "No credentials for this account yet",
+
+  "action.add": "Add current",
+  "action.switchNext": "Switch next",
+  "action.needTwo": "Need at least 2 accounts",
+
+  "toast.switched": "Switched to {{email}}",
+  "toast.switchedNext": "Switched to next account",
+  "toast.added": "Added account",
+  "toast.addedSlot": "Added as Account-{{slot}}",
+  "toast.removed": "Removed {{email}}",
+  "toast.confirmRemove": "Remove account {{email}}?",
+  "toast.actionFailed": "Action failed",
+
+  "empty.cswapMissing.title": "cswap CLI not detected",
+  "empty.cswapMissing.desc": "Optional: install claude-swap for backup tooling",
+  "empty.noLogin.title": "Not logged into Claude Code",
+  "empty.noLogin.desc": "Log in through the CLI or the VS Code extension first",
+  "empty.noAccounts.title": "No managed accounts yet",
+  "empty.noAccounts.desc": "Add the currently-logged-in account to switch quickly later",
+  "empty.noAccounts.add": "Add current account",
+
+  "settings.title": "Settings",
+  "settings.back": "Back",
+  "settings.language": "Language",
+  "settings.language.desc": "Interface language",
+  "settings.language.zh": "中文",
+  "settings.language.en": "English",
+  "settings.autostart": "Launch at login",
+  "settings.autostart.desc": "Auto-start the tray after login",
+  "settings.hotkey": "Hotkey",
+  "settings.hotkey.desc": "Global shortcut to switch to the next account",
+  "settings.hotkey.press": "Press combo… (Esc to cancel)",
+  "settings.hotkey.empty": "not set",
+  "settings.poll": "Poll interval",
+  "settings.poll.desc": "Refresh usage while the window is visible",
+
+  "list.loading": "Loading…",
+  "list.readFailed": "Load failed: {{error}}",
+};
