@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import type { AccountsSnapshot, UsageState } from "@/types";
 
 export const ipc = {
-  probeCswap: () => invoke<boolean>("probe_cswap"),
   listAccounts: () => invoke<AccountsSnapshot>("list_accounts"),
   refreshUsage: (slot: number) => invoke<UsageState>("refresh_usage", { slot }),
   switchNext: () => invoke<string>("switch_next"),

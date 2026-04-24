@@ -6,20 +6,13 @@ use crate::claude_config;
 use crate::credentials;
 use crate::sequence::{self, SequenceError};
 use crate::settings::Settings;
-use crate::swap_cli;
 use crate::switcher;
 use crate::token_stats;
 use crate::types::{AccountDto, AccountsSnapshot};
 use crate::usage::{self, UsageState};
 
 #[tauri::command]
-pub fn probe_cswap() -> bool {
-    swap_cli::probe()
-}
-
-#[tauri::command]
 pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
-    let cswap_missing = !swap_cli::probe();
     let active = claude_config::active_identity();
     let no_active_login = active.is_none();
     let token_totals = token_stats::collect_token_totals();
@@ -34,7 +27,6 @@ pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
                 token_totals,
                 empty: true,
                 no_active_login,
-                cswap_missing,
             });
         }
         Err(e) => return Err(e.to_string()),
@@ -113,7 +105,6 @@ pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
         token_totals,
         empty: false,
         no_active_login,
-        cswap_missing,
     })
 }
 

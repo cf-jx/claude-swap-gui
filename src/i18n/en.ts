@@ -32,8 +32,6 @@ export const en: Record<MessageKey, string> = {
   "toast.confirmRemove": "Remove account {{email}}?",
   "toast.actionFailed": "Action failed",
 
-  "empty.cswapMissing.title": "cswap CLI not detected",
-  "empty.cswapMissing.desc": "Optional: install claude-swap for backup tooling",
   "empty.noLogin.title": "Not logged into Claude Code",
   "empty.noLogin.desc": "Log in through the CLI or the VS Code extension first",
   "empty.noAccounts.title": "No managed accounts yet",

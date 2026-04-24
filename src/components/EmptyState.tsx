@@ -1,15 +1,14 @@
-import { Users, Terminal, Info } from "lucide-react";
+import { Users, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
 
 interface Props {
-  cswapMissing: boolean;
   noActiveLogin: boolean;
   empty: boolean;
   onAdd: () => void;
 }
 
-export function EmptyState({ cswapMissing, noActiveLogin, empty, onAdd }: Props) {
+export function EmptyState({ noActiveLogin, empty, onAdd }: Props) {
   const t = useT();
 
   if (noActiveLogin && empty) {
@@ -35,18 +34,6 @@ export function EmptyState({ cswapMissing, noActiveLogin, empty, onAdd }: Props)
         <Button variant="accent" size="sm" onClick={onAdd} className="no-drag">
           {t("empty.noAccounts.add")}
         </Button>
-      </div>
-    );
-  }
-
-  if (cswapMissing) {
-    return (
-      <div className="drag flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <Info className="h-6 w-6 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">{t("empty.cswapMissing.title")}</h3>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          {t("empty.cswapMissing.desc")}
-        </p>
       </div>
     );
   }

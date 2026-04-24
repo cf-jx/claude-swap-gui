@@ -30,8 +30,6 @@ export const zh = {
   "toast.confirmRemove": "确定移除账户 {{email}} ?",
   "toast.actionFailed": "操作失败",
 
-  "empty.cswapMissing.title": "未检测到 cswap",
-  "empty.cswapMissing.desc": "可选：安装 claude-swap CLI 以便管理备份",
   "empty.noLogin.title": "尚未登录 Claude Code",
   "empty.noLogin.desc": "先在终端或 VS Code 扩展中登录 Claude Code",
   "empty.noAccounts.title": "还没有托管账户",

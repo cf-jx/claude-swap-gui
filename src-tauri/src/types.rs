@@ -23,6 +23,4 @@ pub struct AccountsSnapshot {
     pub empty: bool,
     /// True when we detected no active Claude Code login.
     pub no_active_login: bool,
-    /// True when cswap CLI was not found on PATH.
-    pub cswap_missing: bool,
 }

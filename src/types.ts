@@ -41,5 +41,4 @@ export interface AccountsSnapshot {
   token_totals: TokenTotals;
   empty: boolean;
   no_active_login: boolean;
-  cswap_missing: boolean;
 }

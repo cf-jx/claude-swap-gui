@@ -8,7 +8,6 @@ mod lock;
 mod paths;
 mod sequence;
 mod settings;
-mod swap_cli;
 mod switcher;
 mod token_stats;
 mod tray;
@@ -81,7 +80,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::probe_cswap,
             commands::list_accounts,
             commands::refresh_usage,
             commands::switch_next,

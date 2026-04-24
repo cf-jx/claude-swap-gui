@@ -189,7 +189,6 @@ function ListView({
 
       {showEmpty ? (
         <EmptyState
-          cswapMissing={data?.cswap_missing ?? false}
           noActiveLogin={data?.no_active_login ?? false}
           empty={data?.empty ?? false}
           onAdd={onAdd}
