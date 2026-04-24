@@ -10,6 +10,7 @@ import { SettingsView } from "@/components/SettingsView";
 import { LanguageProvider, useT } from "@/i18n";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useSettings } from "@/hooks/useSettings";
+import { useUpdate } from "@/hooks/useUpdate";
 import { ipc } from "@/lib/ipc";
 import type { Account, AccountsSnapshot, UsageState } from "@/types";
 
@@ -27,6 +28,7 @@ function AppInner() {
   const pollMs = Math.max(5, settings.poll_seconds) * 1000;
 
   const { data, loading, error, refresh, patchUsage } = useAccounts(pollMs);
+  const update = useUpdate();
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<"list" | "settings">("list");
 
@@ -98,7 +100,12 @@ function AppInner() {
       className="mac-shadow flex h-full w-full flex-col overflow-hidden rounded-2xl border hairline bg-background/85 backdrop-blur-2xl backdrop-saturate-150"
     >
       {view === "settings" ? (
-        <SettingsView onBack={() => setView("list")} />
+        <SettingsView
+          onBack={() => setView("list")}
+          updateStatus={update.status}
+          onCheckUpdate={update.checkNow}
+          onInstallUpdate={update.installNow}
+        />
       ) : (
         <ListView
           data={data}
@@ -112,6 +119,7 @@ function AppInner() {
           onAdd={handleAdd}
           onRemove={handleRemove}
           onUsagePatch={patchUsage}
+          hasUpdate={update.hasUpdate}
         />
       )}
       <Toaster
@@ -136,6 +144,7 @@ interface ListProps {
   onAdd: () => void;
   onRemove: (a: Account) => void;
   onUsagePatch: (slot: number, usage: UsageState) => void;
+  hasUpdate: boolean;
 }
 
 function ListView({
@@ -150,10 +159,10 @@ function ListView({
   onAdd,
   onRemove,
   onUsagePatch,
+  hasUpdate,
 }: ListProps) {
   const t = useT();
   const accounts = data?.accounts ?? [];
-  const activeEmail = data?.active_email ?? null;
   const hasMultiple = accounts.length >= 2;
 
   const showEmpty = useMemo(() => {
@@ -165,11 +174,11 @@ function ListView({
   return (
     <>
       <Header
-        activeEmail={activeEmail}
         tokenTotals={data?.token_totals}
         refreshing={loading && data !== null}
         onRefresh={onRefresh}
         onOpenSettings={onOpenSettings}
+        hasUpdate={hasUpdate}
       />
 
       {error && !data && (

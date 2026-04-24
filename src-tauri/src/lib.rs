@@ -49,6 +49,8 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             tray::build(app.handle())?;
             if let Some(w) = app.get_webview_window("main") {

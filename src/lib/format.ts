@@ -22,8 +22,7 @@ export function formatTokenCount(value: number): string {
 
 export function formatUsd(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "$0.00";
-  if (value >= 1000) return `$${value.toFixed(0)}`;
-  if (value >= 100) return `$${value.toFixed(1)}`;
+  if (value >= 10_000) return `$${value.toFixed(0)}`;
   if (value >= 1) return `$${value.toFixed(2)}`;
   return `$${value.toFixed(3)}`;
 }
