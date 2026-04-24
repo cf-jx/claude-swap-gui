@@ -96,7 +96,7 @@ npm run tauri build
 
 | 系统    | 输出格式                          |
 | ------- | --------------------------------- |
-| Windows | `*.msi` 和 `*.exe`（NSIS）        |
+| Windows | `*-setup.exe`（NSIS）             |
 | macOS   | `*.app` 和 `*.dmg`                |
 | Linux   | `*.deb` 和 `*.AppImage`           |
 

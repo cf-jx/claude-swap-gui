@@ -96,7 +96,7 @@ Artifacts land in `src-tauri/target/release/bundle/`:
 
 | OS      | Output                            |
 | ------- | --------------------------------- |
-| Windows | `*.msi` and `*.exe` (NSIS)        |
+| Windows | `*-setup.exe` (NSIS)              |
 | macOS   | `*.app` and `*.dmg`               |
 | Linux   | `*.deb` and `*.AppImage`          |
 
