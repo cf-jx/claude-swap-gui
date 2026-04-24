@@ -13,12 +13,15 @@
 
 ## 为什么做这个
 
-如果你同时有多个 Claude Code 账户（个人、公司、客户 A / B…），官方 CLI 切换繁琐，也看不到合计花费。**Claude Swap GUI** 在 [`claude-swap`](https://github.com/realiti4/claude-swap) CLI 之上套了一层 6 MB 的 Tauri 壳：
+如果你同时有多个 Claude Code 账户（个人、公司、客户 A / B…），官方 CLI 切换繁琐，也看不到合计花费。**Claude Swap GUI** 是一个独立的 6 MB Tauri 应用：
 
 - 列出所有托管账户，实时显示 5 小时 / 7 天配额条
 - 扫描 `~/.claude/projects/**/*.jsonl`，按模型分别计价，**汇总美元成本**
 - 一键切换当前账户（或全局快捷键）
 - 默认像 Raycast 那样从托盘弹出，拖出后会自动转为常驻窗口
+- 自动从 GitHub Releases 拉取签名更新（minisign 校验）
+
+> 不依赖 Python，也不依赖任何外部 CLI——所有读写逻辑都是原生 Rust 实现。
 
 ## 截图
 
@@ -50,31 +53,27 @@
 └──────────────────────────────────────────────────────────────────┘
                   │  invoke / event                  │
 ┌──────────────────────────────────────────────────────────────────┐
-│  Tauri 2（Rust）                                                 │
+│  Tauri 2（Rust）— 单一可执行，零外部运行时依赖                   │
+│  ─ switcher.rs    : 事务性 添加 / 删除 / 切换                    │
+│  ─ credentials.rs : 读写 keyring / .credentials.json             │
+│  ─ sequence.rs    : 本地账户序列与槽位簿记                       │
 │  ─ token_stats.rs : 扫描 ~/.claude/projects/**/*.jsonl,          │
 │                     按 message id 去重，按模型计价               │
 │  ─ usage.rs       : 调用 Anthropic 用量 API                      │
-│  ─ swap_cli.rs    : 写操作转发给 `cswap` CLI                     │
 │  ─ tray.rs / lib  : 托盘弹窗 ↔ 常驻窗口 模式切换                 │
 └──────────────────────────────────────────────────────────────────┘
-                  │
-        `cswap` CLI（Python，事务性账户切换）
 ```
 
-- **读路径** 全部 Rust，没有 Python 依赖即可看用量。
-- **写路径**（切换 / 添加 / 删除）转发给 `cswap`，复用其经过实战检验的事务逻辑。
+账户状态保存在 `~/.claude-swap-backup/`，全部用文件锁（`fs4`）做崩溃安全的原子写入。**不再需要 `cswap` CLI**——所有读写逻辑都已用 Rust 原生实现。
 
 ## 环境要求
 
+**普通用户：** 直接从 [最新 Release](https://github.com/cf-jx/claude-swap-gui/releases/latest) 下载安装包即可，没有任何额外依赖。只需要至少有一个 Claude Code 账户已经登录（`claude login`）。
+
+**从源码构建：**
 - Node.js ≥ 18 + npm
 - Rust ≥ 1.77（`rustup default stable`）
 - Tauri 各平台依赖：<https://tauri.app/start/prerequisites/>
-- [`cswap`](https://github.com/realiti4/claude-swap) CLI 在 `PATH` 上
-  ```bash
-  uv tool install claude-swap          # 或者
-  pipx install claude-swap
-  ```
-- 至少已经在 Claude Code 里登录过一个账户（`claude login`）
 
 ## 快速开始
 
@@ -127,6 +126,15 @@ npm run tauri build
 
 未知模型按 Sonnet 计价。要新增模型系列，改 `src-tauri/src/token_stats.rs` 的 `pricing_for` 函数即可。
 
+## 自动更新
+
+装好 v1.0.0 及以上版本后，App 每次启动都会去 GitHub Releases 检查更新：
+
+1. 发现新版本 → **设置齿轮图标显示红点**
+2. 进设置 → 更新 → **立即更新** → 自动下载、minisign 签名校验、覆盖安装、重启 App
+
+公钥已编进二进制；只有用对应私钥（保存在 CI Secrets）签过名的 Release 才能装上。
+
 ## 目录结构
 
 ```
@@ -163,4 +171,4 @@ claude-swap-gui/
 
 MIT © 2026 cf-jx — 见 [LICENSE](LICENSE)。
 
-本项目依赖 **realiti4** 维护的 [`claude-swap`](https://github.com/realiti4/claude-swap)（MIT）。感谢提供扎实的 CLI 基础。
+本项目灵感来自 **realiti4** 的 Python CLI [`claude-swap`](https://github.com/realiti4/claude-swap)（MIT）。GUI 用 Rust 原生重新实现了 切换 / 添加 / 删除 逻辑，因此不再需要 Python 运行时。

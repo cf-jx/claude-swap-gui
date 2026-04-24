@@ -13,12 +13,15 @@
 
 ## Why
 
-If you juggle several Claude Code accounts (personal, work, client-A, client-B…) the official CLI doesn't make switching easy and gives you no visibility into shared spend. **Claude Swap GUI** wraps the excellent [`claude-swap`](https://github.com/realiti4/claude-swap) CLI in a 6 MB Tauri shell that:
+If you juggle several Claude Code accounts (personal, work, client-A, client-B…) the official CLI doesn't make switching easy and gives you no visibility into shared spend. **Claude Swap GUI** is a self-contained 6 MB Tauri shell that:
 
 - shows every managed account with live 5-hour / 7-day usage bars
 - shows the **total USD cost** of all your local Claude Code sessions, computed per-model from `~/.claude/projects/**/*.jsonl`
 - swaps the active account with one click (or a global hotkey)
 - pops up next to the tray icon Raycast-style — or stays put if you drag it out
+- updates itself in-place from GitHub Releases (signed with minisign)
+
+> No Python or external CLI required — all read & write logic is native Rust.
 
 ## Screenshots
 
@@ -50,31 +53,27 @@ If you juggle several Claude Code accounts (personal, work, client-A, client-B�
 └──────────────────────────────────────────────────────────────────┘
                   │  invoke / event                  │
 ┌──────────────────────────────────────────────────────────────────┐
-│  Tauri 2 (Rust)                                                  │
+│  Tauri 2 (Rust) — single binary, no external runtime             │
+│  ─ switcher.rs    : transactional add / remove / switch          │
+│  ─ credentials.rs : read & write keyring / .credentials.json     │
+│  ─ sequence.rs    : on-disk sequence + slot bookkeeping          │
 │  ─ token_stats.rs : scan ~/.claude/projects/**/*.jsonl,          │
 │                     dedupe by message id, price by model         │
 │  ─ usage.rs       : call Anthropic usage API                     │
-│  ─ swap_cli.rs    : shell out to `cswap` for write ops           │
 │  ─ tray.rs / lib  : popup-vs-persistent window mode toggle       │
 └──────────────────────────────────────────────────────────────────┘
-                  │
-        `cswap` CLI (Python, transactional account swaps)
 ```
 
-- **Read path** is pure Rust — no Python dependency for displaying anything.
-- **Write path** (switch / add / remove) shells out to `cswap` so the battle-tested transactional logic stays the single source of truth.
+Account state lives under `~/.claude-swap-backup/`; the app touches it directly with file locks (`fs4`) for crash-safe atomic writes. The previously-required `cswap` CLI is **no longer needed** — all read & write logic is implemented natively in Rust.
 
 ## Requirements
 
+**End users:** just download the installer from the [latest release](https://github.com/cf-jx/claude-swap-gui/releases/latest) — no extra dependencies. You only need at least one Claude Code account already logged in (`claude login`).
+
+**Building from source:**
 - Node.js ≥ 18 and npm
 - Rust ≥ 1.77 (`rustup default stable`)
 - Platform Tauri prerequisites: <https://tauri.app/start/prerequisites/>
-- [`cswap`](https://github.com/realiti4/claude-swap) CLI on `PATH`
-  ```bash
-  uv tool install claude-swap          # or
-  pipx install claude-swap
-  ```
-- At least one Claude Code account already logged in (`claude login`)
 
 ## Quick start
 
@@ -127,6 +126,15 @@ Cost is computed locally from your session JSONL files using the published Anthr
 
 Unknown models default to Sonnet pricing. Edit `src-tauri/src/token_stats.rs` (`pricing_for`) to add new model families.
 
+## Auto-update
+
+Once installed (v1.0.0+), the app checks the GitHub Releases endpoint on every launch:
+
+1. If a newer version is published, the **gear icon shows a red dot**.
+2. Open Settings → Update → **Install now** to download, verify the minisign signature, install, and relaunch — no manual download needed.
+
+The signing public key is embedded in the binary; only releases signed by the matching private key (held in CI secrets) will install.
+
 ## Project layout
 
 ```
@@ -163,4 +171,4 @@ PRs welcome.
 
 MIT © 2026 cf-jx — see [LICENSE](LICENSE).
 
-This project depends on [`claude-swap`](https://github.com/realiti4/claude-swap) by **realiti4** (MIT). Many thanks for the solid CLI foundation.
+Inspired by the original [`claude-swap`](https://github.com/realiti4/claude-swap) Python CLI by **realiti4** (MIT). The GUI re-implements the swap / add / remove logic natively in Rust so no Python runtime is required.
