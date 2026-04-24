@@ -68,6 +68,7 @@ export const en: Record<MessageKey, string> = {
   "settings.update.checking": "Checking for updates…",
   "settings.update.uptodate": "You're up to date",
   "settings.update.uptodate.desc": "Check manually for new versions",
+  "settings.update.currentVersion": "Current: {{v}}",
   "settings.update.check": "Check now",
   "header.settingsUpdateAvailable": "Settings (update available)",
 

@@ -66,6 +66,7 @@ export const zh = {
   "settings.update.checking": "正在检查更新…",
   "settings.update.uptodate": "已是最新版本",
   "settings.update.uptodate.desc": "可手动检查更新",
+  "settings.update.currentVersion": "当前版本 {{v}}",
   "settings.update.check": "检查更新",
   "header.settingsUpdateAvailable": "设置（有新版本）",
 

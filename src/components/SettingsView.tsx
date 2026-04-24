@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import * as Switch from "@radix-ui/react-switch";
-import { ArrowLeft, Github, ExternalLink, Download, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Github, ExternalLink, Download, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
 import { useI18n, useT, type Lang, type MessageKey } from "@/i18n";
 import { POLL_OPTIONS, normalizePollSeconds, useSettings } from "@/hooks/useSettings";
@@ -17,9 +18,10 @@ interface Props {
   updateStatus: UpdateStatus;
   onCheckUpdate: () => void;
   onInstallUpdate: () => void;
+  appVersion: string;
 }
 
-export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpdate }: Props) {
+export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpdate, appVersion }: Props) {
   const t = useT();
   const { lang, setLang } = useI18n();
   const { settings, save } = useSettings();
@@ -67,6 +69,19 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
           <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
         <span className="text-[12px] font-semibold tracking-tight">{t("settings.title")}</span>
+        <div className="no-drag ml-auto flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              void getCurrentWindow().hide();
+            }}
+            title={t("header.close")}
+            className="hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       <div className="no-drag flex-1 space-y-2 overflow-y-auto p-3">
@@ -135,6 +150,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
             status={updateStatus}
             onCheck={onCheckUpdate}
             onInstall={onInstallUpdate}
+            appVersion={appVersion}
             t={t}
           />
         </div>
@@ -167,13 +183,16 @@ function UpdateRow({
   status,
   onCheck,
   onInstall,
+  appVersion,
   t,
 }: {
   status: UpdateStatus;
   onCheck: () => void;
   onInstall: () => void;
+  appVersion: string;
   t: (key: MessageKey, vars?: Record<string, string | number>) => string;
 }) {
+  const currentLabel = appVersion ? `v${appVersion}` : "";
   const isAvailable = status.state === "available";
   const isDownloading = status.state === "downloading";
   const isReady = status.state === "ready";
@@ -187,7 +206,7 @@ function UpdateRow({
   if (isAvailable) {
     icon = <Download className="h-3.5 w-3.5 text-[hsl(var(--accent))]" />;
     label = t("settings.update.available");
-    desc = `v${status.version}`;
+    desc = currentLabel ? `${currentLabel} → v${status.version}` : `v${status.version}`;
     action = (
       <button
         onClick={onInstall}
@@ -230,9 +249,11 @@ function UpdateRow({
     desc = "";
     action = null;
   } else {
-    icon = <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />;
+    icon = <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--success))]" />;
     label = t("settings.update.uptodate");
-    desc = t("settings.update.uptodate.desc");
+    desc = currentLabel
+      ? t("settings.update.currentVersion", { v: currentLabel })
+      : t("settings.update.uptodate.desc");
     action = (
       <button
         onClick={onCheck}

@@ -11,14 +11,22 @@ interface Props {
   onRefresh: () => void;
   onOpenSettings: () => void;
   hasUpdate?: boolean;
+  appVersion?: string;
 }
 
-export function Header({ tokenTotals, refreshing, onRefresh, onOpenSettings, hasUpdate }: Props) {
+export function Header({ tokenTotals, refreshing, onRefresh, onOpenSettings, hasUpdate, appVersion }: Props) {
   const t = useT();
   return (
     <div className="drag relative flex items-center border-b hairline bg-background/55 px-3.5 py-2.5 cursor-move">
       <div className="pointer-events-none flex flex-1 flex-col items-center gap-1">
-        <span className="text-[12px] font-semibold leading-none tracking-tight">Claude Swap</span>
+        <span className="flex items-baseline gap-1.5 leading-none">
+          <span className="text-[12px] font-semibold tracking-tight">Claude Swap</span>
+          {appVersion && (
+            <span className="text-[9.5px] font-medium tabular-nums text-muted-foreground/70">
+              v{appVersion}
+            </span>
+          )}
+        </span>
         {tokenTotals && tokenTotals.total_tokens > 0 && (
           <div
             className="flex flex-col items-center gap-0.5"

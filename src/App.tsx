@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster, toast } from "sonner";
 import { listen } from "@tauri-apps/api/event";
+import { getVersion } from "@tauri-apps/api/app";
 import { AccountCard } from "@/components/AccountCard";
 import { ActionBar } from "@/components/ActionBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -31,6 +32,11 @@ function AppInner() {
   const update = useUpdate();
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<"list" | "settings">("list");
+  const [appVersion, setAppVersion] = useState<string>("");
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => setAppVersion(""));
+  }, []);
 
   useEffect(() => {
     const unlistenP = listen<{ ok: boolean; action: string; email?: string; error?: string }>(
@@ -105,6 +111,7 @@ function AppInner() {
           updateStatus={update.status}
           onCheckUpdate={update.checkNow}
           onInstallUpdate={update.installNow}
+          appVersion={appVersion}
         />
       ) : (
         <ListView
@@ -120,6 +127,7 @@ function AppInner() {
           onRemove={handleRemove}
           onUsagePatch={patchUsage}
           hasUpdate={update.hasUpdate}
+          appVersion={appVersion}
         />
       )}
       <Toaster
@@ -145,6 +153,7 @@ interface ListProps {
   onRemove: (a: Account) => void;
   onUsagePatch: (slot: number, usage: UsageState) => void;
   hasUpdate: boolean;
+  appVersion: string;
 }
 
 function ListView({
@@ -160,6 +169,7 @@ function ListView({
   onRemove,
   onUsagePatch,
   hasUpdate,
+  appVersion,
 }: ListProps) {
   const t = useT();
   const accounts = data?.accounts ?? [];
@@ -179,6 +189,7 @@ function ListView({
         onRefresh={onRefresh}
         onOpenSettings={onOpenSettings}
         hasUpdate={hasUpdate}
+        appVersion={appVersion}
       />
 
       {error && !data && (
