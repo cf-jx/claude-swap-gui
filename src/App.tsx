@@ -107,6 +107,22 @@ function AppInner() {
     [busy, refresh]
   );
 
+  const handleRefreshAll = useCallback(async () => {
+    const snapshot = await refresh();
+    if (!snapshot?.accounts.length) return;
+    await Promise.all(
+      snapshot.accounts.map(async (account) => {
+        if (account.usage.status === "no_credentials") return;
+        try {
+          const usage = await ipc.refreshUsage(account.slot);
+          patchUsage(account.slot, usage);
+        } catch {
+          // per-card refresh button surfaces individual errors
+        }
+      })
+    );
+  }, [refresh, patchUsage]);
+
   const handleSwitch = useCallback(
     (acc: Account) =>
       doAction(() => ipc.switchTo(String(acc.slot)), t("toast.switched", { email: acc.email })),
@@ -217,7 +233,7 @@ function AppInner() {
           loading={loading}
           error={error}
           busy={busy}
-          onRefresh={refresh}
+          onRefresh={handleRefreshAll}
           onOpenSettings={() => setView("settings")}
           onSwitch={handleSwitch}
           onSwitchNext={handleSwitchNext}
@@ -228,6 +244,7 @@ function AppInner() {
           onUsagePatch={patchUsage}
           hasUpdate={update.hasUpdate}
           appVersion={appVersion}
+          hotkey={settings.hotkey}
         />
       )}
       <Toaster
@@ -256,6 +273,7 @@ interface ListProps {
   onUsagePatch: (slot: number, usage: UsageState) => void;
   hasUpdate: boolean;
   appVersion: string;
+  hotkey?: string;
 }
 
 function ListView({
@@ -274,6 +292,7 @@ function ListView({
   onUsagePatch,
   hasUpdate,
   appVersion,
+  hotkey,
 }: ListProps) {
   const t = useT();
   const accounts = data?.accounts ?? [];
@@ -294,6 +313,7 @@ function ListView({
         onOpenSettings={onOpenSettings}
         hasUpdate={hasUpdate}
         appVersion={appVersion}
+        accountCount={accounts.length}
       />
 
       {error && !data && (
@@ -309,7 +329,7 @@ function ListView({
           onAdd={onAdd}
         />
       ) : (
-        <div className="drag flex-1 space-y-2 overflow-y-auto bg-[hsl(var(--panel))] p-3">
+        <div className="drag flex-1 space-y-2 overflow-y-auto bg-[hsl(var(--panel))] px-3 py-2.5">
           <AnimatePresence initial={false}>
             {accounts.map((acc, index) => (
               <motion.div
@@ -344,6 +364,7 @@ function ListView({
           onValidate={onValidate}
           hasMultiple={hasMultiple}
           busy={busy}
+          hotkey={hotkey}
         />
       )}
     </>

@@ -13,16 +13,18 @@ export function useAccounts(pollMs = 30_000) {
   const mountedRef = useRef(true);
   const inflightRef = useRef(false);
 
-  const refresh = useCallback(async () => {
-    if (inflightRef.current) return;
+  const refresh = useCallback(async (): Promise<AccountsSnapshot | null> => {
+    if (inflightRef.current) return null;
     inflightRef.current = true;
     try {
       const data = await ipc.listAccounts();
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return null;
       setState({ data, loading: false, error: null });
+      return data;
     } catch (e) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) return null;
       setState((s) => ({ ...s, loading: false, error: String(e) }));
+      return null;
     } finally {
       inflightRef.current = false;
     }

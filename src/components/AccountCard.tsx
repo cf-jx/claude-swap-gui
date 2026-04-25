@@ -69,6 +69,7 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
   const hasUsage = usage.status === "ok";
   const buckets = hasUsage ? usage.buckets : [];
   const hasAnyBucket = buckets.length > 0;
+  const indexLabel = String(orderNumber).padStart(2, "0");
 
   return (
     <motion.div
@@ -76,32 +77,31 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.14 }}
       className={cn(
-        "no-drag group relative overflow-hidden rounded-[18px] border px-3 py-2.5 shadow-[0_1px_10px_rgba(15,23,42,0.035)] transition-all",
+        "no-drag group relative overflow-hidden rounded-2xl px-3.5 py-3 transition-[box-shadow,background-color] duration-150",
         account.is_active
-          ? "border-accent/28 bg-accent/[0.075] ring-1 ring-inset ring-accent/18"
-          : "cursor-pointer border-transparent bg-background/72 hover:border-border/70 hover:bg-background/92"
+          ? "card-material-active"
+          : "card-material cursor-pointer hover:-translate-y-px"
       )}
       onClick={handleClick}
     >
-      {/* Row 1: sequence number + email + active + actions */}
-      <div className="flex items-center gap-2">
+      {/* Top row: index + email + status + actions */}
+      <div className="flex items-center gap-2.5">
         <span
           className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums",
-            account.is_active
-              ? "bg-accent text-accent-foreground shadow-[0_0_0_4px_hsl(var(--accent)/0.13)]"
-              : "bg-muted text-muted-foreground ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]"
+            "num w-5 shrink-0 text-[10px] font-semibold tabular-nums",
+            account.is_active ? "text-[hsl(var(--accent))]" : "text-muted-foreground/55"
           )}
         >
-          {orderNumber}
+          {indexLabel}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold tracking-[-0.005em]">
           {account.email}
         </span>
 
         <div className="flex shrink-0 items-center gap-0.5">
           {account.is_active && (
-            <span className="mr-1 rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
+            <span className="mr-1 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--accent))]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--accent))] shadow-[0_0_0_3px_hsl(var(--accent)/0.18)]" />
               {t("account.active")}
             </span>
           )}
@@ -134,17 +134,17 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
         </div>
       </div>
 
-      {/* Row 2: org subline */}
+      {/* Sub-line: organization */}
       {account.organization_name && (
-        <div className="mt-0.5 truncate pl-7 text-[10.5px] font-normal text-muted-foreground">
+        <div className="mt-0.5 truncate pl-[30px] text-[10.5px] text-muted-foreground/85">
           {account.organization_name}
         </div>
       )}
 
-      {/* Row 3+: usage or friendly missing-credentials hint */}
-      <div className="mt-2 pl-7">
+      {/* Usage block */}
+      <div className="mt-2.5 pl-[30px]">
         {hasUsage && hasAnyBucket ? (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {buckets.map((b) => (
               <UsageBar
                 key={b.key}
@@ -155,12 +155,12 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
             ))}
           </div>
         ) : usage.status === "no_credentials" ? (
-          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/80">
+          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/85">
             <AlertCircle className="h-3 w-3 shrink-0" />
             <span className="truncate">{t("account.noCredentials")}</span>
           </div>
         ) : (
-          <div className="text-[10.5px] text-muted-foreground/80">
+          <div className="text-[10.5px] text-muted-foreground/85">
             {t("account.usageUnavailable")}
           </div>
         )}

@@ -12,23 +12,21 @@ export function UsageBar({ label, bucket, indicatorColor }: Props) {
   const pct = bucket?.pct ?? 0;
   const countdown = bucket?.countdown?.trim();
   return (
-    <div className="flex items-center gap-2">
-      <span className="min-w-[24px] shrink-0 whitespace-nowrap text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="flex items-center gap-2.5">
+      <span className="num w-6 shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/75">
         {label}
       </span>
       <Progress
         value={pct}
-        className="h-1 flex-1"
-        indicatorClassName={cn("rounded-full", indicatorColor ?? "bg-foreground")}
+        className="h-1.5 flex-1 bg-black/[0.05] dark:bg-white/[0.06]"
+        indicatorClassName={cn("rounded-full transition-transform", indicatorColor ?? "bg-foreground")}
       />
-      <span className="w-8 text-right text-[10px] font-medium tabular-nums text-foreground/80">
+      <span className="num w-9 text-right text-[10.5px] font-medium text-foreground/85">
         {Math.round(pct)}%
       </span>
-      {countdown && (
-        <span className="w-12 shrink-0 text-right text-[9.5px] tabular-nums text-muted-foreground/70">
-          {countdown}
-        </span>
-      )}
+      <span className="num w-12 shrink-0 text-right text-[10px] text-muted-foreground/70">
+        {countdown ?? "—"}
+      </span>
     </div>
   );
 }
