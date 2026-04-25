@@ -2,55 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens are normative in DESIGN.md (project root).
+ * The HSL values here are the CSS bridge — keep them in sync with the YAML
+ * front-matter: each --token below maps 1:1 to a `colors.*` entry there.
+ */
+
 @layer base {
   :root {
-    /* Soft utility palette */
-    --background: 32 33% 98%;
-    --panel: 28 26% 96%;
-    --foreground: 222 18% 10%;
-    --card: 32 33% 98%;
-    --card-foreground: 222 18% 10%;
-    --primary: 0 0% 10%;
+    /* Surfaces (parchment → white step is the primary depth signal) */
+    --background: 40 33% 97%;        /* neutral        #FAF8F4 */
+    --panel: 38 22% 93%;             /* surface-muted  #F2EEE7 */
+    --panel-2: 38 22% 89%;           /* surface-sunk   #ECE7DD */
+    --card: 0 0% 100%;               /* surface        #FFFFFF */
+
+    /* Text */
+    --foreground: 218 14% 11%;       /* primary        #171A1F */
+    --card-foreground: 218 14% 11%;
+    --primary: 218 14% 11%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 22% 94%;
-    --secondary-foreground: 222 18% 10%;
-    --muted: 30 20% 93%;
-    --muted-foreground: 220 9% 44%;
-    --accent: 217 84% 56%;
+    --secondary: 38 22% 93%;
+    --secondary-foreground: 218 14% 11%;
+    --muted: 38 22% 91%;
+    --muted-foreground: 215 9% 40%;  /* secondary      #5C6470 */
+
+    /* Accent (the single indigo) */
+    --accent: 225 70% 53%;           /* tertiary       #3357D9 */
     --accent-foreground: 0 0% 100%;
-    --destructive: 4 80% 58%;
+    --accent-soft: 220 75% 95%;      /* tertiary-soft  #EAEFFC */
+
+    /* Semantics */
+    --success: 143 54% 40%;          /* #2F9E5F */
+    --warning: 36 70% 50%;           /* #D89026 */
+    --danger: 4 63% 53%;             /* #D24A3F */
+    --destructive: 4 63% 53%;
     --destructive-foreground: 0 0% 100%;
-    --border: 28 16% 86%;
-    --input: 28 16% 86%;
-    --ring: 217 84% 56%;
-    --success: 148 58% 43%;
-    --warning: 39 88% 50%;
-    --danger: 4 80% 58%;
+
+    /* Borders */
+    --border: 38 18% 81%;            /* border         #D8D2C6 */
+    --input: 38 18% 81%;
+    --ring: 225 70% 53%;
+
+    /* Hairlines (1px outlines & dividers, tinted toward parchment) */
+    --hairline: hsl(38 17% 75% / 0.62);
+    --hairline-strong: hsl(38 17% 70% / 0.85);
+
     --radius: 0.875rem;
   }
 
   .dark {
-    --background: 0 0% 11%;
-    --panel: 0 0% 9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 14%;
-    --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 10%;
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 220 9% 64%;
-    --accent: 211 100% 58%;               /* macOS dark-mode blue */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 60%;
+    /* Dark mirror — parchment becomes graphite, indigo brightens */
+    --background: 222 14% 8%;
+    --panel: 222 14% 10%;
+    --panel-2: 222 14% 12%;
+    --card: 222 14% 13%;
+
+    --foreground: 0 0% 97%;
+    --card-foreground: 0 0% 97%;
+    --primary: 0 0% 97%;
+    --primary-foreground: 218 14% 11%;
+    --secondary: 222 12% 18%;
+    --secondary-foreground: 0 0% 97%;
+    --muted: 222 12% 18%;
+    --muted-foreground: 220 8% 64%;
+
+    --accent: 224 96% 64%;
+    --accent-foreground: 218 14% 11%;
+    --accent-soft: 224 60% 18%;
+
+    --success: 148 60% 50%;
+    --warning: 38 92% 60%;
+    --danger: 4 84% 62%;
+    --destructive: 4 84% 62%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 22%;
-    --input: 0 0% 22%;
-    --ring: 211 100% 58%;
-    --success: 142 71% 48%;
-    --warning: 38 100% 58%;
-    --danger: 4 90% 60%;
+
+    --border: 222 10% 24%;
+    --input: 222 10% 24%;
+    --ring: 224 96% 64%;
+
+    --hairline: hsl(0 0% 100% / 0.07);
+    --hairline-strong: hsl(0 0% 100% / 0.12);
   }
 
   html,
@@ -59,16 +90,23 @@
     height: 100%;
   }
 
+  /*
+   * Typography — system stack only. SF on macOS, Segoe UI Variable on Win11,
+   * PingFang SC / Microsoft YaHei for CJK. Inter is intentionally absent.
+   * Numeric voice is achieved via OpenType features, not a monospace font.
+   */
   html {
     font-family:
       -apple-system,
       BlinkMacSystemFont,
       "SF Pro Text",
-      "SF Pro Display",
-      "Inter",
-      system-ui,
+      "Segoe UI Variable Text",
       "Segoe UI",
+      "PingFang SC",
+      "Microsoft YaHei",
+      system-ui,
       sans-serif;
+    font-feature-settings: "ss01", "cv01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -76,11 +114,28 @@
 
   body {
     @apply bg-background text-foreground;
-    letter-spacing: 0;
+    letter-spacing: -0.005em;
+  }
+
+  /* Numerics — tabular figures + ss01 alternate digits, used everywhere a number appears */
+  .num,
+  [data-num] {
+    font-feature-settings: "tnum", "ss01", "cv01";
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+  }
+
+  /* Label-caps — short axis labels and binary status pills only */
+  .caps {
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-ring/50 ring-offset-0;
+    @apply outline-none ring-2 ring-ring/45 ring-offset-0;
   }
 }
 
@@ -91,12 +146,52 @@
   .drag {
     -webkit-app-region: drag;
   }
+
+  /* 1px hairline — tinted toward parchment, never neutral gray */
   .hairline {
-    border-color: hsl(0 0% 0% / 0.08);
+    border-color: var(--hairline);
   }
-  .dark .hairline {
-    border-color: hsl(0 0% 100% / 0.1);
+  .hairline-strong {
+    border-color: var(--hairline-strong);
   }
+
+  /*
+   * Card material (DESIGN.md §Elevation): tonal contrast is the depth signal.
+   * The 8px shadow is sub-conscious — it only anchors the card, never lifts it.
+   */
+  .card-material {
+    background-color: hsl(var(--card));
+    box-shadow:
+      0 0 0 1px var(--hairline),
+      0 1px 0 0 hsl(0 0% 100% / 0.6) inset,
+      0 1px 2px hsl(218 14% 11% / 0.04),
+      0 4px 14px -8px hsl(218 14% 11% / 0.06);
+  }
+  .dark .card-material {
+    box-shadow:
+      0 0 0 1px var(--hairline),
+      0 1px 0 0 hsl(0 0% 100% / 0.04) inset,
+      0 1px 2px hsl(0 0% 0% / 0.4),
+      0 4px 14px -8px hsl(0 0% 0% / 0.55);
+  }
+
+  /* Active card — soft accent tint + ring + halo replaces the drop shadow */
+  .card-material-active {
+    background-color: hsl(var(--accent-soft));
+    box-shadow:
+      0 0 0 1px hsl(var(--accent) / 0.32),
+      0 0 0 4px hsl(var(--accent) / 0.08),
+      0 1px 0 0 hsl(0 0% 100% / 0.5) inset;
+  }
+  .dark .card-material-active {
+    background-color: hsl(var(--accent-soft) / 0.4);
+    box-shadow:
+      0 0 0 1px hsl(var(--accent) / 0.5),
+      0 0 0 4px hsl(var(--accent) / 0.1),
+      0 1px 0 0 hsl(0 0% 100% / 0.05) inset;
+  }
+
+  /* Native window shadow — used by the Tauri webview body, not by inner cards */
   .mac-shadow {
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.04),
