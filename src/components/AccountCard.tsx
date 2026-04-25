@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Loader2, RefreshCw, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { UsageBar } from "@/components/UsageBar";
@@ -159,9 +159,18 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
             <AlertCircle className="h-3 w-3 shrink-0" />
             <span className="truncate">{t("account.noCredentials")}</span>
           </div>
+        ) : usage.status === "unavailable" && !usage.message?.trim() ? (
+          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/70">
+            <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+            <span className="truncate">{t("account.usageLoading")}</span>
+          </div>
         ) : (
-          <div className="text-[10.5px] text-muted-foreground/85">
-            {t("account.usageUnavailable")}
+          <div
+            className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/85"
+            title={usage.status === "unavailable" ? usage.message : undefined}
+          >
+            <AlertTriangle className="h-3 w-3 shrink-0 text-[hsl(var(--warning))]" />
+            <span className="truncate">{t("account.usageFailed")}</span>
           </div>
         )}
       </div>

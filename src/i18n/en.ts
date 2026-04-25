@@ -17,6 +17,8 @@ export const en: Record<MessageKey, string> = {
   "account.refresh": "Refresh usage for this account",
   "account.remove": "Remove account",
   "account.usageUnavailable": "usage unavailable",
+  "account.usageLoading": "Loading usage…",
+  "account.usageFailed": "Usage fetch failed (refresh card or re-login)",
   "account.noCredentials": "credentials missing — refresh or log in again and add it",
   "toast.refreshed": "Usage refreshed",
   "toast.noCredentials": "No credentials for this account yet",

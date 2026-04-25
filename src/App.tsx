@@ -28,7 +28,7 @@ function AppInner() {
   const { settings } = useSettings();
   const pollMs = Math.max(5, settings.poll_seconds) * 1000;
 
-  const { data, loading, error, refresh, patchUsage } = useAccounts(pollMs);
+  const { data, loading, error, refresh, patchUsage } = useAccounts();
   const update = useUpdate();
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<"list" | "settings">("list");
@@ -122,6 +122,21 @@ function AppInner() {
       })
     );
   }, [refresh, patchUsage]);
+
+  // Background polling — drive the full refresh pipeline (list + usage),
+  // not just the bare account list. Pauses while the window is hidden.
+  useEffect(() => {
+    if (pollMs <= 0) return;
+    const tick = () => {
+      if (document.visibilityState === "visible") void handleRefreshAll();
+    };
+    const id = window.setInterval(tick, pollMs);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [pollMs, handleRefreshAll]);
 
   const handleSwitch = useCallback(
     (acc: Account) =>

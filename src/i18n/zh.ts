@@ -15,6 +15,8 @@ export const zh = {
   "account.refresh": "刷新该账户用量",
   "account.remove": "移除账户",
   "account.usageUnavailable": "用量数据暂不可用",
+  "account.usageLoading": "正在加载用量…",
+  "account.usageFailed": "用量获取失败（点卡片刷新或重新登录）",
   "account.noCredentials": "凭证缺失，可尝试刷新或重新登录后添加",
   "toast.refreshed": "用量已刷新",
   "toast.noCredentials": "该账户无凭证，先切换到它再点「添加当前」",

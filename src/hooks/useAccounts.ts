@@ -8,7 +8,7 @@ interface State {
   error: string | null;
 }
 
-export function useAccounts(pollMs = 30_000) {
+export function useAccounts() {
   const [state, setState] = useState<State>({ data: null, loading: true, error: null });
   const mountedRef = useRef(true);
   const inflightRef = useRef(false);
@@ -19,7 +19,25 @@ export function useAccounts(pollMs = 30_000) {
     try {
       const data = await ipc.listAccounts();
       if (!mountedRef.current) return null;
-      setState({ data, loading: false, error: null });
+      // Carry "ok" usage from the previous snapshot forward, so polling
+      // refreshes don't briefly flash "unavailable" before the new fetch
+      // completes. Slots that have moved or lost ok-state fall through
+      // to the fresh default placeholder.
+      setState((prev) => {
+        const prevOk = new Map(
+          (prev.data?.accounts ?? [])
+            .filter((a) => a.usage.status === "ok")
+            .map((a) => [a.slot, a.usage] as const)
+        );
+        const merged: AccountsSnapshot = {
+          ...data,
+          accounts: data.accounts.map((acc) => {
+            const carried = prevOk.get(acc.slot);
+            return carried ? { ...acc, usage: carried } : acc;
+          }),
+        };
+        return { data: merged, loading: false, error: null };
+      });
       return data;
     } catch (e) {
       if (!mountedRef.current) return null;
@@ -47,24 +65,13 @@ export function useAccounts(pollMs = 30_000) {
   useEffect(() => {
     mountedRef.current = true;
     refresh();
-    if (pollMs <= 0) {
-      return () => {
-        mountedRef.current = false;
-      };
-    }
-    const id = window.setInterval(() => {
-      if (document.visibilityState === "visible") refresh();
-    }, pollMs);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
     return () => {
       mountedRef.current = false;
-      window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [pollMs, refresh]);
+    // Polling lives in App.tsx so it can drive the full refresh pipeline
+    // (list + fan-out usage), instead of the bare list refresh that left
+    // all usage bars stuck at "unavailable" between intervals.
+  }, [refresh]);
 
   return { ...state, refresh, patchUsage };
 }
