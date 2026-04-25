@@ -52,3 +52,7 @@ export interface BackupSummary {
   missing_credentials: number;
   missing_configs: number;
 }
+
+export type AddOutcome =
+  | { status: "added"; slot: number; email: string }
+  | { status: "refreshed"; slot: number; email: string };

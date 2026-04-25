@@ -6,7 +6,7 @@ use crate::claude_config;
 use crate::credentials;
 use crate::sequence::{self, SequenceError};
 use crate::settings::Settings;
-use crate::switcher::{self, BackupSummary};
+use crate::switcher::{self, AddOutcome, BackupSummary};
 use crate::token_stats;
 use crate::types::{AccountDto, AccountsSnapshot};
 use crate::usage::{self, UsageState};
@@ -151,7 +151,7 @@ pub async fn switch_to(identifier: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn add_current_account() -> Result<u32, String> {
+pub async fn add_current_account() -> Result<AddOutcome, String> {
     tokio::task::spawn_blocking(switcher::add_current)
         .await
         .map_err(|e| e.to_string())?

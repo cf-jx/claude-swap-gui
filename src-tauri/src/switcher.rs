@@ -33,6 +33,13 @@ pub struct BackupSummary {
     pub missing_configs: usize,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "snake_case", tag = "status")]
+pub enum AddOutcome {
+    Added { slot: u32, email: String },
+    Refreshed { slot: u32, email: String },
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum SwitchError {
     #[error("{0}")]
@@ -423,7 +430,7 @@ pub fn switch_next() -> Result<String, SwitchError> {
 /// Returns the slot assigned. If the identity is already managed we refresh
 /// its stored credentials in place (matches `claude_swap.switcher.add_account`
 /// behaviour at `switcher.py:544`).
-pub fn add_current() -> Result<u32, SwitchError> {
+pub fn add_current() -> Result<AddOutcome, SwitchError> {
     ensure_backup_dirs()?;
     let _lock = FileLock::acquire(&lock_path(), LOCK_TIMEOUT)?;
 
@@ -459,7 +466,10 @@ pub fn add_current() -> Result<u32, SwitchError> {
         seq.active_account_number = Some(slot_num);
         seq.last_updated = Some(timestamp());
         write_sequence(&seq)?;
-        return Ok(slot_num);
+        return Ok(AddOutcome::Refreshed {
+            slot: slot_num,
+            email,
+        });
     }
 
     // Fresh add.
@@ -483,7 +493,10 @@ pub fn add_current() -> Result<u32, SwitchError> {
     seq.active_account_number = Some(slot_num);
     seq.last_updated = Some(timestamp());
     write_sequence(&seq)?;
-    Ok(slot_num)
+    Ok(AddOutcome::Added {
+        slot: slot_num,
+        email,
+    })
 }
 
 /// Remove the account at `slot` from managed storage.

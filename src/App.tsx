@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Toaster, toast } from "sonner";
 import { listen } from "@tauri-apps/api/event";
 import { getVersion } from "@tauri-apps/api/app";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { AccountCard } from "@/components/AccountCard";
 import { ActionBar } from "@/components/ActionBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -152,8 +153,12 @@ function AppInner() {
       if (busy) return;
       setBusy(true);
       try {
-        const slot = await ipc.addCurrent();
-        toast.success(t("toast.addedSlot", { slot: String(slot) }));
+        const outcome = await ipc.addCurrent();
+        if (outcome.status === "refreshed") {
+          toast.success(t("toast.refreshedExisting", { email: outcome.email }));
+        } else {
+          toast.success(t("toast.addedSlot", { email: outcome.email }));
+        }
         await refresh();
       } catch (e) {
         toast.error(String(e).replace(/^Error: /, ""));
@@ -165,8 +170,16 @@ function AppInner() {
   );
   const handleBackup = useCallback(async () => {
     if (busy) return;
-    const destination = prompt(t("backup.prompt"));
-    if (!destination) return;
+    const picked = await openDialog({
+      directory: true,
+      multiple: false,
+      title: t("backup.pickFolder"),
+    });
+    const destination = Array.isArray(picked) ? picked[0] : picked;
+    if (!destination) {
+      toast(t("backup.cancelled"));
+      return;
+    }
     setBusy(true);
     try {
       const summary = await ipc.backupAccounts(destination);
