@@ -201,7 +201,7 @@ function AppInner() {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: "easeOut" }}
-      className="mac-shadow flex h-full w-full flex-col overflow-hidden rounded-[20px] border hairline bg-background/92 backdrop-blur-2xl backdrop-saturate-150"
+      className="flex h-full w-full flex-col overflow-hidden bg-background"
     >
       {view === "settings" ? (
         <SettingsView
