@@ -6,13 +6,18 @@ use crate::claude_config;
 use crate::credentials;
 use crate::sequence::{self, SequenceError};
 use crate::settings::Settings;
-use crate::switcher;
+use crate::switcher::{self, BackupSummary};
 use crate::token_stats;
 use crate::types::{AccountDto, AccountsSnapshot};
 use crate::usage::{self, UsageState};
 
 #[tauri::command]
 pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
+    tokio::task::spawn_blocking(switcher::import_stored_accounts)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+
     let active = claude_config::active_identity();
     let no_active_login = active.is_none();
     let token_totals = token_stats::collect_token_totals();
@@ -61,25 +66,6 @@ pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
         ));
     }
 
-    let mut by_slot = std::collections::HashMap::new();
-    for (idx, (slot, email, _, _, is_active)) in entries.iter().enumerate() {
-        if idx > 0 {
-            tokio::time::sleep(std::time::Duration::from_millis(700)).await;
-        }
-
-        let creds = if *is_active {
-            credentials::read_active().unwrap_or_default()
-        } else {
-            credentials::read_account(&slot.to_string(), email).unwrap_or_default()
-        };
-        let usage_state = if creds.is_empty() {
-            UsageState::NoCredentials
-        } else {
-            usage::fetch_for_account(&slot.to_string(), email, &creds, *is_active, false).await
-        };
-        by_slot.insert(*slot, usage_state);
-    }
-
     let mut active_slot = None;
     let accounts: Vec<AccountDto> = entries
         .into_iter()
@@ -87,13 +73,25 @@ pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
             if is_active {
                 active_slot = Some(slot);
             }
+            let creds = if is_active {
+                credentials::read_active().unwrap_or_default()
+            } else {
+                credentials::read_account(&slot.to_string(), &email).unwrap_or_default()
+            };
+            let usage = if creds.is_empty() {
+                UsageState::NoCredentials
+            } else {
+                UsageState::Unavailable {
+                    message: String::new(),
+                }
+            };
             AccountDto {
                 slot,
                 email,
                 organization_name: org_name,
                 organization_uuid: org_uuid,
                 is_active,
-                usage: by_slot.remove(&slot).unwrap_or(UsageState::NoCredentials),
+                usage,
             }
         })
         .collect();
@@ -166,6 +164,14 @@ pub async fn remove_account(identifier: String) -> Result<(), String> {
     let slot = switcher::resolve_identifier(&seq, &identifier)
         .ok_or_else(|| format!("no account matches identifier '{identifier}'"))?;
     tokio::task::spawn_blocking(move || switcher::remove(&slot))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn backup_accounts(destination_dir: String) -> Result<BackupSummary, String> {
+    tokio::task::spawn_blocking(move || switcher::backup_accounts(&destination_dir))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

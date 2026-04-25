@@ -8,18 +8,30 @@ use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-use chrono::{SecondsFormat, Utc};
+use chrono::{Local, SecondsFormat, Utc};
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::credentials::{
-    atomic_write, delete_account, delete_account_config, read_account,
-    read_account_config, read_active, write_account, write_account_config, write_active,
+    atomic_write, delete_account, delete_account_config, discover_account_usernames,
+    parse_account_keyring_username, read_account, read_account_config, read_active, write_account,
+    write_account_config, write_active,
 };
 use crate::lock::FileLock;
 use crate::paths::{backup_dir, claude_config, sequence_file};
 use crate::sequence::{self, AccountRecord, SequenceFile};
 
 const LOCK_TIMEOUT: Duration = Duration::from_secs(10);
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BackupSummary {
+    pub path: String,
+    pub accounts: usize,
+    pub credentials: usize,
+    pub configs: usize,
+    pub missing_credentials: usize,
+    pub missing_configs: usize,
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum SwitchError {
@@ -83,8 +95,162 @@ fn write_sequence(seq: &SequenceFile) -> Result<(), SwitchError> {
     Ok(())
 }
 
+fn parse_oauth_metadata(config_text: &str) -> (String, String, String) {
+    let value: Value = serde_json::from_str(config_text).unwrap_or(Value::Null);
+    let oauth = value.get("oauthAccount").and_then(|v| v.as_object());
+    let account_uuid = oauth
+        .and_then(|o| o.get("accountUuid"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let organization_uuid = oauth
+        .and_then(|o| o.get("organizationUuid"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let organization_name = oauth
+        .and_then(|o| o.get("organizationName"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    (account_uuid, organization_uuid, organization_name)
+}
+
 fn load_sequence_or_empty() -> SequenceFile {
     sequence::load_or_empty()
+}
+
+pub fn import_stored_accounts() -> Result<usize, SwitchError> {
+    ensure_backup_dirs()?;
+    let _lock = FileLock::acquire(&lock_path(), LOCK_TIMEOUT)?;
+
+    let mut seq = load_sequence_or_empty();
+    let active = current_identity();
+    let active_config = fs::read_to_string(claude_config()).ok();
+    let mut imported = 0usize;
+
+    for username in discover_account_usernames() {
+        let Some((slot_num, email)) = parse_account_keyring_username(&username) else {
+            continue;
+        };
+        let key = slot_num.to_string();
+        if seq.accounts.contains_key(&key) {
+            continue;
+        }
+
+        let config_text = read_account_config(&key, &email).or_else(|| {
+            let (active_email, _) = active.as_ref()?;
+            if active_email == &email {
+                active_config.clone()
+            } else {
+                None
+            }
+        });
+        let (account_uuid, organization_uuid, organization_name) = config_text
+            .as_deref()
+            .map(parse_oauth_metadata)
+            .unwrap_or_default();
+
+        seq.accounts.insert(
+            key,
+            AccountRecord {
+                email,
+                uuid: account_uuid,
+                organization_uuid,
+                organization_name,
+                added: Some(timestamp()),
+            },
+        );
+        if !seq.sequence.contains(&slot_num) {
+            seq.sequence.push(slot_num);
+            seq.sequence.sort();
+        }
+        imported += 1;
+    }
+
+    if let Some((active_email, active_org_uuid)) = active {
+        if let Some(slot) = find_slot_by_identity(&seq, &active_email, &active_org_uuid) {
+            seq.active_account_number = slot.parse().ok();
+        }
+    }
+
+    if imported > 0 {
+        seq.last_updated = Some(timestamp());
+        write_sequence(&seq)?;
+    }
+    Ok(imported)
+}
+
+pub fn backup_accounts(destination_dir: &str) -> Result<BackupSummary, SwitchError> {
+    let destination_dir = destination_dir.trim();
+    if destination_dir.is_empty() {
+        return Err(SwitchError::Msg("backup destination is empty".into()));
+    }
+
+    let _ = import_stored_accounts();
+    let seq = sequence::load().map_err(|e| match e {
+        sequence::SequenceError::NotFound => SwitchError::NoAccounts,
+        other => SwitchError::Msg(other.to_string()),
+    })?;
+    let active = current_identity();
+    let active_config = fs::read_to_string(claude_config()).ok();
+
+    let backup_root = std::path::PathBuf::from(destination_dir).join(format!(
+        "claude-swap-backup-{}",
+        Local::now().format("%Y%m%d-%H%M%S")
+    ));
+    let credentials_root = backup_root.join("credentials");
+    let configs_root = backup_root.join("configs");
+    fs::create_dir_all(&credentials_root)?;
+    fs::create_dir_all(&configs_root)?;
+
+    let sequence_text = serde_json::to_string_pretty(&seq)?;
+    atomic_write(&backup_root.join("sequence.json"), sequence_text.as_bytes())?;
+
+    let mut summary = BackupSummary {
+        path: backup_root.to_string_lossy().to_string(),
+        accounts: seq.accounts.len(),
+        credentials: 0,
+        configs: 0,
+        missing_credentials: 0,
+        missing_configs: 0,
+    };
+
+    for (slot, record) in &seq.accounts {
+        let is_active = active
+            .as_ref()
+            .map(|(email, org)| email == &record.email && org == &record.organization_uuid)
+            .unwrap_or(false);
+        let credentials = if is_active {
+            read_active()
+        } else {
+            read_account(slot, &record.email)
+        };
+        if let Some(credentials) = credentials {
+            let path = credentials_root.join(format!(".creds-{slot}-{}.json", record.email));
+            atomic_write(&path, credentials.as_bytes())?;
+            summary.credentials += 1;
+        } else {
+            summary.missing_credentials += 1;
+        }
+
+        let config = read_account_config(slot, &record.email).or_else(|| {
+            if is_active {
+                active_config.clone()
+            } else {
+                None
+            }
+        });
+        if let Some(config) = config {
+            let path = configs_root.join(format!(".claude-config-{slot}-{}.json", record.email));
+            atomic_write(&path, config.as_bytes())?;
+            summary.configs += 1;
+        } else {
+            summary.missing_configs += 1;
+        }
+    }
+
+    Ok(summary)
 }
 
 /// Current (email, organization_uuid) from ~/.claude.json.
@@ -141,8 +307,7 @@ pub fn switch_to(target: &str) -> Result<String, SwitchError> {
     let target_record = seq.accounts[target].clone();
     let target_email = target_record.email.clone();
 
-    let (current_email, current_org_uuid) =
-        current_identity().ok_or(SwitchError::NoActiveLogin)?;
+    let (current_email, current_org_uuid) = current_identity().ok_or(SwitchError::NoActiveLogin)?;
     let current_slot = find_slot_by_identity(&seq, &current_email, &current_org_uuid)
         .unwrap_or_else(|| {
             // current login not yet managed — fabricate a ghost slot so backup
@@ -151,9 +316,8 @@ pub fn switch_to(target: &str) -> Result<String, SwitchError> {
         });
 
     // Snapshot originals for rollback.
-    let original_creds = read_active().ok_or_else(|| {
-        SwitchError::Msg("failed to read active credentials".into())
-    })?;
+    let original_creds = read_active()
+        .ok_or_else(|| SwitchError::Msg("failed to read active credentials".into()))?;
     let original_config_text = fs::read_to_string(claude_config())?;
     let original_seq_text = fs::read_to_string(sequence_file()).ok();
 
@@ -167,14 +331,10 @@ pub fn switch_to(target: &str) -> Result<String, SwitchError> {
 
     // Step 1 — back up the currently-active account (if it has a managed slot).
     if !current_slot.is_empty() {
-        if let Err(e) =
-            write_account(&current_slot, &current_email, &original_creds)
-        {
+        if let Err(e) = write_account(&current_slot, &current_email, &original_creds) {
             return Err(SwitchError::Msg(format!("backup creds failed: {e}")));
         }
-        if let Err(e) =
-            write_account_config(&current_slot, &current_email, &original_config_text)
-        {
+        if let Err(e) = write_account_config(&current_slot, &current_email, &original_config_text) {
             return Err(SwitchError::Msg(format!("backup config failed: {e}")));
         }
     }
@@ -269,9 +429,8 @@ pub fn add_current() -> Result<u32, SwitchError> {
 
     let (email, org_uuid) = current_identity().ok_or(SwitchError::NoActiveLogin)?;
 
-    let creds = read_active().ok_or_else(|| {
-        SwitchError::Msg("failed to read active credentials".into())
-    })?;
+    let creds = read_active()
+        .ok_or_else(|| SwitchError::Msg("failed to read active credentials".into()))?;
     let config_text = fs::read_to_string(claude_config())?;
     let config_value: Value = serde_json::from_str(&config_text)?;
     let oauth = config_value

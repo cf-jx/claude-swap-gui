@@ -1,18 +1,20 @@
-import { Plus, ArrowRightLeft } from "lucide-react";
+import { Activity, ArrowRightLeft, Archive, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
 
 interface Props {
   onAdd: () => void;
   onSwitchNext: () => void;
+  onBackup: () => void;
+  onValidate: () => void;
   hasMultiple: boolean;
   busy?: boolean;
 }
 
-export function ActionBar({ onAdd, onSwitchNext, hasMultiple, busy }: Props) {
+export function ActionBar({ onAdd, onSwitchNext, onBackup, onValidate, hasMultiple, busy }: Props) {
   const t = useT();
   return (
-    <div className="no-drag flex items-center gap-1.5 border-t hairline px-3 py-2.5">
+    <div className="no-drag grid grid-cols-2 gap-1.5 border-t hairline px-3 py-2.5">
       <Button variant="outline" size="sm" className="flex-1" onClick={onAdd} disabled={busy}>
         <Plus className="h-3 w-3" />
         {t("action.add")}
@@ -27,6 +29,14 @@ export function ActionBar({ onAdd, onSwitchNext, hasMultiple, busy }: Props) {
       >
         <ArrowRightLeft className="h-3 w-3" />
         {t("action.switchNext")}
+      </Button>
+      <Button variant="outline" size="sm" className="flex-1" onClick={onBackup} disabled={busy}>
+        <Archive className="h-3 w-3" />
+        {t("action.backup")}
+      </Button>
+      <Button variant="outline" size="sm" className="flex-1" onClick={onValidate} disabled={busy}>
+        <Activity className="h-3 w-3" />
+        {t("action.validate")}
       </Button>
     </div>
   );

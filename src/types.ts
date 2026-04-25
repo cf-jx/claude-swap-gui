@@ -42,3 +42,12 @@ export interface AccountsSnapshot {
   empty: boolean;
   no_active_login: boolean;
 }
+
+export interface BackupSummary {
+  path: string;
+  accounts: number;
+  credentials: number;
+  configs: number;
+  missing_credentials: number;
+  missing_configs: number;
+}

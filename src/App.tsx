@@ -33,6 +33,10 @@ function AppInner() {
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<"list" | "settings">("list");
   const [appVersion, setAppVersion] = useState<string>("");
+  const accountsKey = useMemo(() => {
+    if (!data) return "";
+    return `${data.active_slot ?? "none"}:${data.accounts.map((acc) => acc.slot).join(",")}`;
+  }, [data]);
 
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => setAppVersion(""));
@@ -59,6 +63,32 @@ function AppInner() {
       unlistenP.then((un) => un());
     };
   }, [refresh, t]);
+
+  useEffect(() => {
+    if (!data?.accounts.length) return;
+    let cancelled = false;
+    const queue = [...data.accounts];
+    const workerCount = Math.min(3, queue.length);
+
+    const runWorker = async () => {
+      while (!cancelled) {
+        const account = queue.shift();
+        if (!account) return;
+        if (account.usage.status === "no_credentials") continue;
+        try {
+          const usage = await ipc.refreshUsage(account.slot);
+          if (!cancelled) patchUsage(account.slot, usage);
+        } catch {
+          // Keep the card-level refresh button as the explicit error surface.
+        }
+      }
+    };
+
+    void Promise.all(Array.from({ length: workerCount }, runWorker));
+    return () => {
+      cancelled = true;
+    };
+  }, [accountsKey, patchUsage]);
 
   const doAction = useCallback(
     async (fn: () => Promise<unknown>, successMsg: string) => {
@@ -87,13 +117,81 @@ function AppInner() {
     [doAction, t]
   );
   const handleAdd = useCallback(
-    () => doAction(() => ipc.addCurrent(), t("toast.added")),
-    [doAction, t]
+    async () => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        const slot = await ipc.addCurrent();
+        toast.success(t("toast.addedSlot", { slot: String(slot) }));
+        await refresh();
+      } catch (e) {
+        toast.error(String(e).replace(/^Error: /, ""));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, refresh, t]
   );
+  const handleBackup = useCallback(async () => {
+    if (busy) return;
+    const destination = prompt(t("backup.prompt"));
+    if (!destination) return;
+    setBusy(true);
+    try {
+      const summary = await ipc.backupAccounts(destination);
+      toast.success(
+        t("backup.done", {
+          accounts: String(summary.accounts),
+          credentials: String(summary.credentials),
+          path: summary.path,
+        })
+      );
+    } catch (e) {
+      toast.error(String(e).replace(/^Error: /, ""));
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, t]);
+  const handleValidate = useCallback(async () => {
+    if (busy || !data?.accounts.length) return;
+    setBusy(true);
+    try {
+      const results = await Promise.all(
+        data.accounts.map(async (account) => {
+          const usage = await ipc.refreshUsage(account.slot);
+          patchUsage(account.slot, usage);
+          return usage;
+        })
+      );
+      const invalid = results.filter((usage) => usage.status !== "ok").length;
+      if (invalid > 0) {
+        toast.error(t("validate.failed", { count: String(invalid) }));
+      } else {
+        toast.success(t("validate.done"));
+      }
+    } catch (e) {
+      toast.error(String(e).replace(/^Error: /, ""));
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, data?.accounts, patchUsage, t]);
   const handleRemove = useCallback(
-    async (acc: Account) => {
-      if (!confirm(t("toast.confirmRemove", { email: acc.email }))) return;
-      await doAction(() => ipc.removeAccount(String(acc.slot)), t("toast.removed", { email: acc.email }));
+    (acc: Account) => {
+      toast(t("toast.confirmRemove", { email: acc.email }), {
+        action: {
+          label: t("action.remove"),
+          onClick: () => {
+            void doAction(
+              () => ipc.removeAccount(String(acc.slot)),
+              t("toast.removed", { email: acc.email })
+            );
+          },
+        },
+        cancel: {
+          label: t("action.cancel"),
+          onClick: () => {},
+        },
+      });
     },
     [doAction, t]
   );
@@ -124,6 +222,8 @@ function AppInner() {
           onSwitch={handleSwitch}
           onSwitchNext={handleSwitchNext}
           onAdd={handleAdd}
+          onBackup={handleBackup}
+          onValidate={handleValidate}
           onRemove={handleRemove}
           onUsagePatch={patchUsage}
           hasUpdate={update.hasUpdate}
@@ -150,6 +250,8 @@ interface ListProps {
   onSwitch: (a: Account) => void;
   onSwitchNext: () => void;
   onAdd: () => void;
+  onBackup: () => void;
+  onValidate: () => void;
   onRemove: (a: Account) => void;
   onUsagePatch: (slot: number, usage: UsageState) => void;
   hasUpdate: boolean;
@@ -166,6 +268,8 @@ function ListView({
   onSwitch,
   onSwitchNext,
   onAdd,
+  onBackup,
+  onValidate,
   onRemove,
   onUsagePatch,
   hasUpdate,
@@ -236,6 +340,8 @@ function ListView({
         <ActionBar
           onAdd={onAdd}
           onSwitchNext={onSwitchNext}
+          onBackup={onBackup}
+          onValidate={onValidate}
           hasMultiple={hasMultiple}
           busy={busy}
         />
