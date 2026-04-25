@@ -29,20 +29,10 @@ export function Header({
 
   return (
     <header className="drag relative shrink-0 border-b hairline bg-background/85 cursor-move">
-      {/* Row 1: brand + hero cost + window actions */}
-      <div className="flex h-[42px] items-center px-3.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="text-[13px] font-semibold tracking-[-0.01em]">Claude Swap</span>
-          {hasTokens && (
-            <span
-              className="num shrink-0 text-[13px] font-semibold tracking-tight text-[hsl(var(--success))]"
-              title={t("header.cost")}
-            >
-              {formatUsd(tokenTotals.total_cost_usd)}
-            </span>
-          )}
-        </div>
-        <div className="no-drag flex shrink-0 items-center gap-0.5">
+      {/* Row 1: brand + window actions only — no metric clutter on the title line */}
+      <div className="flex h-[40px] items-center px-3.5">
+        <span className="text-[13px] font-semibold tracking-[-0.01em]">Claude Swap</span>
+        <div className="no-drag ml-auto flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={onRefresh} title={t("header.refresh")}>
             <RefreshCw className={refreshing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
           </Button>
@@ -72,67 +62,49 @@ export function Header({
         </div>
       </div>
 
-      {/* Row 2: meta — version dot account count */}
-      <div className="pointer-events-none flex items-center gap-1.5 px-3.5 pb-1.5 text-[10.5px] text-muted-foreground/85">
+      {/* Row 2: stat strip — the story is "what got spent / how many tokens" */}
+      {hasTokens && (
+        <div
+          className="flex items-baseline gap-3 border-t hairline bg-[hsl(var(--panel-2)/0.5)] px-3.5 py-1.5"
+          title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
+        >
+          <Stat label="SPENT" value={formatUsd(tokenTotals.total_cost_usd)} valueClass="text-[hsl(var(--success))]" />
+          <span aria-hidden className="h-2.5 w-px bg-[hsl(var(--border))]" />
+          <Stat label="TOKENS" value={formatTokenCount(tokenTotals.total_tokens)} />
+        </div>
+      )}
+
+      {/* Row 3: meta — version + account count, demoted to a quiet line */}
+      <div className="pointer-events-none flex items-center gap-1.5 px-3.5 py-1 text-[10px] text-muted-foreground/75">
         {appVersion && <span className="num font-medium">v{appVersion}</span>}
         {appVersion && accountCount > 0 && (
-          <span className="text-muted-foreground/55">·</span>
+          <span className="text-muted-foreground/50">·</span>
         )}
         {accountCount > 0 && (
           <span className="num">{t("header.accountCount", { count: accountCount })}</span>
         )}
-        {hasTokens && (
-          <>
-            <span className="ml-auto" />
-            <span className="num font-medium text-foreground/70">
-              {formatTokenCount(tokenTotals.total_tokens)}
-            </span>
-            <span className="text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground/65">
-              tokens
-            </span>
-          </>
-        )}
       </div>
-
-      {/* Row 3: token breakdown stripe */}
-      {hasTokens && (
-        <div
-          className="flex items-center gap-3 border-t hairline bg-[hsl(var(--panel-2)/0.5)] px-3.5 py-1.5 text-[10.5px] text-muted-foreground"
-          title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
-        >
-          <TokenStat
-            label={t("header.tokensInput")}
-            value={formatTokenCount(tokenTotals.input_tokens)}
-            dotColor="bg-[hsl(var(--success))]"
-          />
-          <span aria-hidden className="h-2.5 w-px bg-[hsl(var(--border))]" />
-          <TokenStat
-            label={t("header.tokensOutput")}
-            value={formatTokenCount(tokenTotals.output_tokens)}
-            dotColor="bg-[hsl(var(--accent))]"
-          />
-          <span aria-hidden className="h-2.5 w-px bg-[hsl(var(--border))]" />
-          <TokenStat
-            label={t("header.tokensCache")}
-            value={formatTokenCount(tokenTotals.cache_read_tokens)}
-            dotColor="bg-[hsl(var(--warning))]"
-          />
-        </div>
-      )}
     </header>
   );
 }
 
-function TokenStat({ label, value, dotColor }: { label: string; value: string; dotColor?: string }) {
+function Stat({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="flex items-center gap-1 text-[9.5px] uppercase tracking-[0.08em] text-muted-foreground/65">
-        {dotColor && (
-          <span aria-hidden className={`h-1 w-1 rounded-full ${dotColor} opacity-80`} />
-        )}
+      <span className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground/70">
         {label}
       </span>
-      <span className="num text-[11px] font-medium text-foreground/85">{value}</span>
+      <span className={`num text-[13px] font-semibold tracking-tight ${valueClass ?? "text-foreground"}`}>
+        {value}
+      </span>
     </span>
   );
 }
