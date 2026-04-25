@@ -5,3 +5,7 @@ src-tauri/gen/schemas/
 *.log
 .DS_Store
 .vscode/
+
+# Local-only artifacts (already on GitHub Releases / regenerated on demand)
+output/
+release-downloads/
