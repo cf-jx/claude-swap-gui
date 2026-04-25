@@ -118,8 +118,10 @@ fn format_reset(resets_at: &str) -> Option<(String, String)> {
 }
 
 /// Catch-all parser: any top-level field shaped like `{utilization, resets_at?}`
-/// is treated as a usage bucket. This auto-adopts new limits Anthropic adds
-/// (e.g. Max-tier sonnet-only or opus-only quotas) without code changes.
+/// is treated as a usage bucket. We then apply a display whitelist that mirrors
+/// the official `/usage` slash command — only buckets a user can interpret are
+/// surfaced. Unknown internal codenames (e.g. `seven_day_omelette`) are hidden
+/// since their quota already counts toward the `seven_day` total.
 fn build_result(raw: serde_json::Value) -> Usage {
     let Some(map) = raw.as_object() else {
         return Usage::default();
@@ -127,6 +129,7 @@ fn build_result(raw: serde_json::Value) -> Usage {
     let mut buckets: Vec<Bucket> = map
         .iter()
         .filter_map(|(key, value)| {
+            let label = display_label(key)?;
             let utilization = value.get("utilization")?.as_f64()? as f32;
             let resets_at = value
                 .get("resets_at")
@@ -138,7 +141,7 @@ fn build_result(raw: serde_json::Value) -> Usage {
                 .unwrap_or_else(|| (String::new(), String::new()));
             Some(Bucket {
                 key: key.clone(),
-                label: derive_label(key),
+                label,
                 pct: utilization,
                 countdown,
                 clock,
@@ -162,20 +165,36 @@ fn bucket_rank(key: &str) -> (u8, usize, &str) {
     (prefix, key.len(), key)
 }
 
-fn derive_label(key: &str) -> String {
-    if key == "five_hour" {
-        return "5h".into();
+/// Return the user-facing label for a bucket key, or `None` to hide it.
+///
+/// The whitelist mirrors Anthropic's official `/usage` view: session, weekly
+/// (all models), and per-public-model weekly buckets (Sonnet / Opus / Haiku).
+/// Internal codenames (omelette, sushi, …) are hidden — they roll up into
+/// `seven_day` and surfacing them only confuses users.
+fn display_label(key: &str) -> Option<String> {
+    match key {
+        "five_hour" => Some("5h".into()),
+        "seven_day" => Some("7d".into()),
+        _ => {
+            if let Some(model) = key.strip_prefix("seven_day_") {
+                pretty_model(model).map(|m| format!("7d · {m}"))
+            } else if let Some(model) = key.strip_prefix("five_hour_") {
+                pretty_model(model).map(|m| format!("5h · {m}"))
+            } else {
+                None
+            }
+        }
     }
-    if key == "seven_day" {
-        return "7d".into();
+}
+
+/// Normalize a model suffix — only public model names pass through.
+fn pretty_model(model: &str) -> Option<String> {
+    match model {
+        "sonnet" => Some("Sonnet".into()),
+        "opus" => Some("Opus".into()),
+        "haiku" => Some("Haiku".into()),
+        _ => None,
     }
-    if let Some(rest) = key.strip_prefix("five_hour_") {
-        return format!("5h·{rest}");
-    }
-    if let Some(rest) = key.strip_prefix("seven_day_") {
-        return format!("7d·{rest}");
-    }
-    key.replace('_', "·")
 }
 
 async fn request_usage(
