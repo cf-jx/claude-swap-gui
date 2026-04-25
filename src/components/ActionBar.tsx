@@ -14,7 +14,7 @@ interface Props {
 export function ActionBar({ onAdd, onSwitchNext, onBackup, onValidate, hasMultiple, busy }: Props) {
   const t = useT();
   return (
-    <div className="no-drag grid grid-cols-2 gap-1.5 border-t hairline px-3 py-2.5">
+    <div className="no-drag grid grid-cols-2 gap-1.5 border-t hairline bg-background/82 px-3 py-2.5">
       <Button variant="outline" size="sm" className="flex-1" onClick={onAdd} disabled={busy}>
         <Plus className="h-3 w-3" />
         {t("action.add")}

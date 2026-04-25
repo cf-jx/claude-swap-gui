@@ -1,6 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import * as Switch from "@radix-ui/react-switch";
-import { ArrowLeft, Github, ExternalLink, Download, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Github,
+  ExternalLink,
+  Download,
+  Loader2,
+  CheckCircle2,
+  RefreshCw,
+  X,
+  SlidersHorizontal,
+  Info,
+} from "lucide-react";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Button } from "@/components/ui/button";
@@ -12,6 +23,7 @@ import type { UpdateStatus } from "@/hooks/useUpdate";
 
 const REPO_URL = "https://github.com/cf-jx/claude-swap-gui";
 const ISSUES_URL = "https://github.com/cf-jx/claude-swap-gui/issues";
+type SettingsSection = "general" | "about";
 
 interface Props {
   onBack: () => void;
@@ -26,6 +38,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
   const { lang, setLang } = useI18n();
   const { settings, save } = useSettings();
   const [recording, setRecording] = useState(false);
+  const [section, setSection] = useState<SettingsSection>("general");
 
   useEffect(() => {
     if (!recording) return;
@@ -58,7 +71,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
 
   return (
     <div className="flex h-full flex-col">
-      <div className="drag flex items-center gap-2 border-b hairline px-3 py-2.5">
+      <div className="drag flex h-12 shrink-0 items-center gap-2 border-b hairline bg-background/75 px-3">
         <Button
           variant="ghost"
           size="icon"
@@ -68,7 +81,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
-        <span className="text-[12px] font-semibold tracking-tight">{t("settings.title")}</span>
+        <span className="text-[12.5px] font-semibold">{t("settings.title")}</span>
         <div className="no-drag ml-auto flex items-center">
           <Button
             variant="ghost"
@@ -84,98 +97,141 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
         </div>
       </div>
 
-      <div className="no-drag flex-1 space-y-2 overflow-y-auto p-3">
-        <Row
-          label={t("settings.language")}
-          desc={t("settings.language.desc")}
-          trailing={
-            <div className="flex items-center gap-0.5 rounded-full bg-black/[0.06] p-0.5 dark:bg-white/[0.08]">
-              <LangPill active={lang === "zh"} onClick={() => setLang("zh" as Lang)}>
-                {t("settings.language.zh")}
-              </LangPill>
-              <LangPill active={lang === "en"} onClick={() => setLang("en" as Lang)}>
-                {t("settings.language.en")}
-              </LangPill>
-            </div>
-          }
-        />
-        <Row
-          label={t("settings.autostart")}
-          desc={t("settings.autostart.desc")}
-          trailing={
-            <SwitchRoot
-              checked={settings.autostart}
-              onCheckedChange={(v) => save({ autostart: v })}
-            />
-          }
-        />
-        <Row
-          label={t("settings.hotkey")}
-          desc={t("settings.hotkey.desc")}
-          trailing={
-            <button
-              className={cn(
-                "rounded-md bg-black/[0.05] px-2.5 py-1 text-[11px] font-medium tracking-wide transition-colors dark:bg-white/[0.08]",
-                "hover:bg-black/[0.08] dark:hover:bg-white/[0.12]",
-                recording && "!bg-accent/10 !text-accent animate-pulse"
-              )}
-              onClick={() => setRecording((r) => !r)}
-            >
-              {recording
-                ? t("settings.hotkey.press")
-                : settings.hotkey
-                  ? formatHotkey(settings.hotkey)
-                  : t("settings.hotkey.empty")}
-            </button>
-          }
-        />
-        <Row
-          label={t("settings.poll")}
-          desc={t("settings.poll.desc")}
-          trailing={
-            <button
-              className="rounded-md bg-black/[0.05] px-2.5 py-1 text-[11px] font-medium tabular-nums transition-colors hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
-              onClick={nextPoll}
-            >
-              {normalizePollSeconds(settings.poll_seconds)}s
-            </button>
-          }
-        />
-
-        <div className="pt-1.5">
-          <div className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            {t("settings.update")}
-          </div>
-          <UpdateRow
-            status={updateStatus}
-            onCheck={onCheckUpdate}
-            onInstall={onInstallUpdate}
-            appVersion={appVersion}
-            t={t}
+      <div className="no-drag flex min-h-0 flex-1 bg-[hsl(var(--panel))]">
+        <nav className="flex w-[88px] shrink-0 flex-col gap-1 border-r hairline bg-muted/45 p-2">
+          <NavItem
+            active={section === "general"}
+            icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+            label={t("settings.general")}
+            onClick={() => setSection("general")}
           />
-        </div>
+          <NavItem
+            active={section === "about"}
+            icon={<Info className="h-3.5 w-3.5" />}
+            label={t("settings.about")}
+            onClick={() => setSection("about")}
+          />
+        </nav>
 
-        <div className="pt-1.5">
-          <div className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            {t("settings.about")}
-          </div>
-          <div className="flex flex-col gap-1">
-            <LinkRow
-              icon={<Github className="h-3.5 w-3.5" />}
-              label={t("settings.repo")}
-              desc={t("settings.repo.desc")}
-              onClick={() => void openUrl(REPO_URL)}
-            />
-            <LinkRow
-              icon={<ExternalLink className="h-3.5 w-3.5" />}
-              label={t("settings.feedback")}
-              desc={t("settings.feedback.desc")}
-              onClick={() => void openUrl(ISSUES_URL)}
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {section === "general" ? (
+            <div className="space-y-2">
+              <Row
+                label={t("settings.language")}
+                desc={t("settings.language.desc")}
+                trailing={
+                  <div className="flex items-center gap-0.5 rounded-full bg-black/[0.055] p-0.5 dark:bg-white/[0.08]">
+                    <LangPill active={lang === "zh"} onClick={() => setLang("zh" as Lang)}>
+                      {t("settings.language.zh")}
+                    </LangPill>
+                    <LangPill active={lang === "en"} onClick={() => setLang("en" as Lang)}>
+                      {t("settings.language.en")}
+                    </LangPill>
+                  </div>
+                }
+              />
+              <Row
+                label={t("settings.autostart")}
+                desc={t("settings.autostart.desc")}
+                trailing={
+                  <SwitchRoot
+                    checked={settings.autostart}
+                    onCheckedChange={(v) => save({ autostart: v })}
+                  />
+                }
+              />
+              <Row
+                label={t("settings.hotkey")}
+                desc={t("settings.hotkey.desc")}
+                trailing={
+                  <button
+                    className={cn(
+                      "rounded-lg bg-black/[0.055] px-2.5 py-1 text-[11px] font-medium tracking-wide transition-colors dark:bg-white/[0.08]",
+                      "hover:bg-black/[0.08] dark:hover:bg-white/[0.12]",
+                      recording && "!bg-accent/10 !text-accent animate-pulse"
+                    )}
+                    onClick={() => setRecording((r) => !r)}
+                  >
+                    {recording
+                      ? t("settings.hotkey.press")
+                      : settings.hotkey
+                        ? formatHotkey(settings.hotkey)
+                        : t("settings.hotkey.empty")}
+                  </button>
+                }
+              />
+              <Row
+                label={t("settings.poll")}
+                desc={t("settings.poll.desc")}
+                trailing={
+                  <button
+                    className="rounded-lg bg-black/[0.055] px-2.5 py-1 text-[11px] font-medium tabular-nums transition-colors hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12]"
+                    onClick={nextPoll}
+                  >
+                    {normalizePollSeconds(settings.poll_seconds)}s
+                  </button>
+                }
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <UpdateRow
+                status={updateStatus}
+                onCheck={onCheckUpdate}
+                onInstall={onInstallUpdate}
+                appVersion={appVersion}
+                t={t}
+              />
+              <LinkRow
+                icon={<Github className="h-3.5 w-3.5" />}
+                label={t("settings.repo")}
+                desc={t("settings.repo.desc")}
+                onClick={() => void openUrl(REPO_URL)}
+              />
+              <LinkRow
+                icon={<ExternalLink className="h-3.5 w-3.5" />}
+                label={t("settings.feedback")}
+                desc={t("settings.feedback.desc")}
+                onClick={() => void openUrl(ISSUES_URL)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function NavItem({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative flex h-8 items-center gap-1.5 rounded-lg px-2 text-left text-[11.5px] font-medium transition-colors",
+        active
+          ? "bg-background text-foreground shadow-[0_1px_4px_rgba(15,23,42,0.06)]"
+          : "text-muted-foreground hover:bg-background/55 hover:text-foreground"
+      )}
+    >
+      <span
+        className={cn(
+          "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent transition-opacity",
+          active ? "opacity-100" : "opacity-0"
+        )}
+      />
+      <span className={active ? "text-accent" : "text-muted-foreground"}>{icon}</span>
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -198,10 +254,10 @@ function UpdateRow({
   const isReady = status.state === "ready";
   const isError = status.state === "error";
 
-  let icon: React.ReactNode;
+  let icon: ReactNode;
   let label: string;
   let desc: string;
-  let action: React.ReactNode;
+  let action: ReactNode;
 
   if (isAvailable) {
     icon = <Download className="h-3.5 w-3.5 text-[hsl(var(--accent))]" />;
@@ -265,12 +321,12 @@ function UpdateRow({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-secondary/60 px-3.5 py-2.5">
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background/60">
+    <div className="flex min-h-[68px] items-center gap-3 rounded-2xl border hairline bg-background/80 px-3 py-2.5 shadow-[0_1px_8px_rgba(15,23,42,0.035)]">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-muted/75">
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[12px] font-medium tracking-tight">{label}</span>
+        <span className="text-[12px] font-semibold">{label}</span>
         {desc && <span className="truncate text-[10.5px] text-muted-foreground">{desc}</span>}
       </div>
       {action}
@@ -284,7 +340,7 @@ function LinkRow({
   desc,
   onClick,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   desc?: string;
   onClick: () => void;
@@ -292,13 +348,13 @@ function LinkRow({
   return (
     <button
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-xl bg-secondary/60 px-3.5 py-2.5 text-left transition-colors hover:bg-secondary"
+      className="group flex min-h-[58px] w-full items-center gap-3 rounded-2xl border hairline bg-background/80 px-3 py-2.5 text-left shadow-[0_1px_8px_rgba(15,23,42,0.035)] transition-colors hover:bg-background"
     >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground group-hover:text-foreground">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-muted/75 text-muted-foreground group-hover:text-foreground">
         {icon}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[12px] font-medium tracking-tight">{label}</span>
+        <span className="text-[12px] font-semibold">{label}</span>
         {desc && (
           <span className="truncate text-[10.5px] text-muted-foreground">{desc}</span>
         )}
@@ -315,7 +371,7 @@ function LangPill({
 }: {
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
@@ -339,12 +395,12 @@ function Row({
 }: {
   label: string;
   desc?: string;
-  trailing: React.ReactNode;
+  trailing: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-secondary/60 px-3.5 py-2.5">
+    <div className="flex min-h-[68px] items-center gap-3 rounded-2xl border hairline bg-background/80 px-3 py-2.5 shadow-[0_1px_8px_rgba(15,23,42,0.035)]">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[12px] font-medium tracking-tight">{label}</span>
+        <span className="text-[12px] font-semibold">{label}</span>
         {desc && <span className="text-[10.5px] text-muted-foreground">{desc}</span>}
       </div>
       {trailing}

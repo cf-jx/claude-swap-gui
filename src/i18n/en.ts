@@ -48,6 +48,7 @@ export const en: Record<MessageKey, string> = {
 
   "settings.title": "Settings",
   "settings.back": "Back",
+  "settings.general": "General",
   "settings.language": "Language",
   "settings.language.desc": "Interface language",
   "settings.language.zh": "中文",

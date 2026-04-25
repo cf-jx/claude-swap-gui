@@ -77,10 +77,10 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.14 }}
       className={cn(
-        "no-drag group relative overflow-hidden rounded-xl px-3 py-2.5 transition-all",
+        "no-drag group relative overflow-hidden rounded-[18px] border px-3 py-2.5 shadow-[0_1px_10px_rgba(15,23,42,0.035)] transition-all",
         account.is_active
-          ? "bg-accent/[0.08] ring-1 ring-inset ring-accent/25"
-          : "bg-secondary/40 hover:bg-secondary/70 cursor-pointer ring-1 ring-inset ring-transparent hover:ring-black/[0.04] dark:hover:ring-white/[0.06]"
+          ? "border-accent/28 bg-accent/[0.075] ring-1 ring-inset ring-accent/18"
+          : "cursor-pointer border-transparent bg-background/72 hover:border-border/70 hover:bg-background/92"
       )}
       onClick={handleClick}
     >
@@ -90,7 +90,7 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums",
             account.is_active
-              ? "bg-accent text-accent-foreground shadow-[0_0_0_3px_hsl(var(--accent)/0.16)]"
+              ? "bg-accent text-accent-foreground shadow-[0_0_0_4px_hsl(var(--accent)/0.13)]"
               : "bg-muted text-muted-foreground ring-1 ring-inset ring-black/[0.04] dark:ring-white/[0.06]"
           )}
         >
@@ -102,7 +102,7 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
 
         <div className="flex shrink-0 items-center gap-0.5">
           {account.is_active && (
-            <span className="mr-1 text-[9px] font-semibold uppercase text-accent">
+            <span className="mr-1 rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold text-accent">
               {t("account.active")}
             </span>
           )}

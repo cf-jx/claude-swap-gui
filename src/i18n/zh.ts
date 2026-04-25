@@ -46,6 +46,7 @@ export const zh = {
 
   "settings.title": "设置",
   "settings.back": "返回",
+  "settings.general": "通用",
   "settings.language": "语言",
   "settings.language.desc": "界面语言",
   "settings.language.zh": "中文",

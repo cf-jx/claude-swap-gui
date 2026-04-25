@@ -17,10 +17,10 @@ interface Props {
 export function Header({ tokenTotals, refreshing, onRefresh, onOpenSettings, hasUpdate, appVersion }: Props) {
   const t = useT();
   return (
-    <div className="drag relative flex items-center border-b hairline bg-background/55 px-3.5 py-2.5 cursor-move">
-      <div className="pointer-events-none flex flex-1 flex-col items-center gap-1">
+    <div className="drag relative flex min-h-[76px] items-center border-b hairline bg-background/78 px-3.5 py-2.5 cursor-move">
+      <div className="pointer-events-none flex flex-1 flex-col items-center gap-1.5">
         <span className="flex items-baseline gap-1.5 leading-none">
-          <span className="text-[12px] font-semibold tracking-tight">Claude Swap</span>
+          <span className="text-[12.5px] font-semibold">Claude Swap</span>
           {appVersion && (
             <span className="text-[9.5px] font-medium tabular-nums text-muted-foreground/70">
               v{appVersion}
@@ -33,10 +33,10 @@ export function Header({ tokenTotals, refreshing, onRefresh, onOpenSettings, has
             title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
           >
             <div className="flex items-center gap-1.5">
-              <span className="rounded-md bg-[hsl(var(--success)/0.12)] px-1.5 py-px text-[10px] font-semibold tabular-nums text-[hsl(var(--success))]">
+              <span className="rounded-full bg-[hsl(var(--success)/0.12)] px-2 py-0.5 text-[10px] font-semibold tabular-nums text-[hsl(var(--success))]">
                 {formatUsd(tokenTotals.total_cost_usd)}
               </span>
-              <span className="rounded-md bg-muted px-1.5 py-px text-[10px] font-medium tabular-nums text-muted-foreground">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
                 {formatTokenCount(tokenTotals.total_tokens)} tok
               </span>
             </div>

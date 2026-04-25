@@ -4,33 +4,34 @@
 
 @layer base {
   :root {
-    /* macOS-inspired light palette */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 6%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 6%;
+    /* Soft utility palette */
+    --background: 32 33% 98%;
+    --panel: 28 26% 96%;
+    --foreground: 222 18% 10%;
+    --card: 32 33% 98%;
+    --card-foreground: 222 18% 10%;
     --primary: 0 0% 10%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 0 0% 10%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 211 100% 50%;              /* iOS/macOS system blue #007AFF */
+    --secondary: 30 22% 94%;
+    --secondary-foreground: 222 18% 10%;
+    --muted: 30 20% 93%;
+    --muted-foreground: 220 9% 44%;
+    --accent: 217 84% 56%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 58%;             /* iOS system red */
+    --destructive: 4 80% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 211 100% 50%;
-    --success: 142 71% 45%;               /* iOS system green */
-    --warning: 38 100% 50%;               /* iOS system yellow/orange */
-    --danger: 4 90% 58%;
-    --radius: 0.75rem;                    /* 12px, macOS feel */
+    --border: 28 16% 86%;
+    --input: 28 16% 86%;
+    --ring: 217 84% 56%;
+    --success: 148 58% 43%;
+    --warning: 39 88% 50%;
+    --danger: 4 80% 58%;
+    --radius: 0.875rem;
   }
 
   .dark {
-    /* macOS-inspired dark palette (Big Sur+) */
     --background: 0 0% 11%;
+    --panel: 0 0% 9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 14%;
     --card-foreground: 0 0% 98%;
