@@ -34,6 +34,8 @@ struct CachedUsage {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Bucket {
+    pub key: String,
+    pub label: String,
     pub pct: f32,
     pub countdown: String,
     pub clock: String,
@@ -41,8 +43,7 @@ pub struct Bucket {
 
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Usage {
-    pub five_hour: Option<Bucket>,
-    pub seven_day: Option<Bucket>,
+    pub buckets: Vec<Bucket>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -51,18 +52,6 @@ pub enum UsageState {
     Ok(Usage),
     NoCredentials,
     Unavailable { message: String },
-}
-
-#[derive(Debug, Deserialize)]
-struct ApiBucket {
-    utilization: f32,
-    resets_at: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ApiUsage {
-    five_hour: Option<ApiBucket>,
-    seven_day: Option<ApiBucket>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -128,26 +117,71 @@ fn format_reset(resets_at: &str) -> Option<(String, String)> {
     Some((countdown, clock))
 }
 
-fn build_result(api: ApiUsage) -> Usage {
-    let mapper = |b: ApiBucket| {
-        let (countdown, clock) = b
-            .resets_at
-            .as_deref()
-            .and_then(format_reset)
-            .unwrap_or_else(|| (String::new(), String::new()));
-        Bucket {
-            pct: b.utilization,
-            countdown,
-            clock,
-        }
+/// Catch-all parser: any top-level field shaped like `{utilization, resets_at?}`
+/// is treated as a usage bucket. This auto-adopts new limits Anthropic adds
+/// (e.g. Max-tier sonnet-only or opus-only quotas) without code changes.
+fn build_result(raw: serde_json::Value) -> Usage {
+    let Some(map) = raw.as_object() else {
+        return Usage::default();
     };
-    Usage {
-        five_hour: api.five_hour.map(mapper),
-        seven_day: api.seven_day.map(mapper),
-    }
+    let mut buckets: Vec<Bucket> = map
+        .iter()
+        .filter_map(|(key, value)| {
+            let utilization = value.get("utilization")?.as_f64()? as f32;
+            let resets_at = value
+                .get("resets_at")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
+            let (countdown, clock) = resets_at
+                .as_deref()
+                .and_then(format_reset)
+                .unwrap_or_else(|| (String::new(), String::new()));
+            Some(Bucket {
+                key: key.clone(),
+                label: derive_label(key),
+                pct: utilization,
+                countdown,
+                clock,
+            })
+        })
+        .collect();
+
+    buckets.sort_by(|a, b| bucket_rank(&a.key).cmp(&bucket_rank(&b.key)));
+    Usage { buckets }
 }
 
-async fn request_usage(client: &reqwest::Client, access_token: &str) -> anyhow::Result<ApiUsage> {
+/// Sort key: 5h before 7d, base form before model-suffixed variants, then alpha.
+fn bucket_rank(key: &str) -> (u8, usize, &str) {
+    let prefix = if key.starts_with("five_hour") {
+        0
+    } else if key.starts_with("seven_day") {
+        1
+    } else {
+        2
+    };
+    (prefix, key.len(), key)
+}
+
+fn derive_label(key: &str) -> String {
+    if key == "five_hour" {
+        return "5h".into();
+    }
+    if key == "seven_day" {
+        return "7d".into();
+    }
+    if let Some(rest) = key.strip_prefix("five_hour_") {
+        return format!("5h·{rest}");
+    }
+    if let Some(rest) = key.strip_prefix("seven_day_") {
+        return format!("7d·{rest}");
+    }
+    key.replace('_', "·")
+}
+
+async fn request_usage(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> anyhow::Result<serde_json::Value> {
     let resp = client
         .get(USAGE_URL)
         .bearer_auth(access_token)

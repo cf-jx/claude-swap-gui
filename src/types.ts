@@ -1,16 +1,17 @@
 export interface Bucket {
+  key: string;
+  label: string;
   pct: number;
   countdown: string;
   clock: string;
 }
 
 export interface Usage {
-  five_hour: Bucket | null;
-  seven_day: Bucket | null;
+  buckets: Bucket[];
 }
 
 export type UsageState =
-  | { status: "ok"; five_hour: Bucket | null; seven_day: Bucket | null }
+  | { status: "ok"; buckets: Bucket[] }
   | { status: "no_credentials" }
   | { status: "unavailable"; message: string };
 

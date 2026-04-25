@@ -67,9 +67,8 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
 
   const usage = account.usage;
   const hasUsage = usage.status === "ok";
-  const five = hasUsage ? usage.five_hour : null;
-  const seven = hasUsage ? usage.seven_day : null;
-  const hasAnyBucket = Boolean(five || seven);
+  const buckets = hasUsage ? usage.buckets : [];
+  const hasAnyBucket = buckets.length > 0;
 
   return (
     <motion.div
@@ -146,20 +145,14 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
       <div className="mt-2 pl-7">
         {hasUsage && hasAnyBucket ? (
           <div className="space-y-1">
-            {five && (
+            {buckets.map((b) => (
               <UsageBar
-                label="5h"
-                bucket={five}
-                indicatorColor={usageColor(five.pct)}
+                key={b.key}
+                label={b.label}
+                bucket={b}
+                indicatorColor={usageColor(b.pct)}
               />
-            )}
-            {seven && (
-              <UsageBar
-                label="7d"
-                bucket={seven}
-                indicatorColor={usageColor(seven.pct)}
-              />
-            )}
+            ))}
           </div>
         ) : usage.status === "no_credentials" ? (
           <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/80">
