@@ -28,10 +28,15 @@ export function Header({
   const hasTokens = !!tokenTotals && tokenTotals.total_tokens > 0;
 
   return (
-    <header className="drag relative shrink-0 border-b hairline bg-background/85 cursor-move">
+    <header
+      data-tauri-drag-region
+      className="drag relative shrink-0 border-b hairline bg-background/85 cursor-move"
+    >
       {/* Row 1: brand + window actions only — no metric clutter on the title line */}
-      <div className="flex h-[40px] items-center px-3.5">
-        <span className="text-[13px] font-semibold tracking-[-0.01em]">Claude Swap</span>
+      <div data-tauri-drag-region className="flex h-[40px] items-center px-3.5">
+        <span data-tauri-drag-region className="text-[13px] font-semibold tracking-[-0.01em]">
+          Claude Swap
+        </span>
         <div className="no-drag ml-auto flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={onRefresh} title={t("header.refresh")}>
             <RefreshCw className={refreshing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
@@ -65,6 +70,7 @@ export function Header({
       {/* Row 2: stat strip — the story is "what got spent / how many tokens" */}
       {hasTokens && (
         <div
+          data-tauri-drag-region
           className="flex items-baseline gap-3 border-t hairline bg-[hsl(var(--panel-2)/0.5)] px-3.5 py-1.5"
           title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
         >
@@ -75,7 +81,10 @@ export function Header({
       )}
 
       {/* Row 3: meta — version + account count, demoted to a quiet line */}
-      <div className="pointer-events-none flex items-center gap-1.5 px-3.5 py-1 text-[10px] text-muted-foreground/75">
+      <div
+        data-tauri-drag-region
+        className="pointer-events-none flex items-center gap-1.5 px-3.5 py-1 text-[10px] text-muted-foreground/75"
+      >
         {appVersion && <span className="num font-medium">v{appVersion}</span>}
         {appVersion && accountCount > 0 && (
           <span className="text-muted-foreground/50">·</span>
