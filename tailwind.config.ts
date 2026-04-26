@@ -41,13 +41,33 @@ export default {
         danger: "hsl(var(--danger))",
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        none: "0",
+        sm: "1px",
+        DEFAULT: "2px",
+        md: "2px",
+        lg: "3px",
+        xl: "4px",
+        "2xl": "4px",
+        "3xl": "4px",
+        full: "9999px",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        sans: [
+          "Switzer",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"Segoe UI Variable Text"',
+          '"Segoe UI"',
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: [
+          '"JetBrains Mono"',
+          "ui-monospace",
+          '"Cascadia Code"',
+          '"Source Code Pro"',
+          "monospace",
+        ],
       },
       keyframes: {
         "pop-in": {

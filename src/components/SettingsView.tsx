@@ -72,7 +72,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
   return (
     <div className="flex h-full flex-col">
       {/* Title bar */}
-      <div className="drag flex h-[42px] shrink-0 items-center gap-2 border-b hairline bg-background/85 px-3">
+      <div className="drag flex h-[42px] shrink-0 items-center gap-2 border-b hairline-strong bg-background px-3">
         <Button
           variant="ghost"
           size="icon"
@@ -99,7 +99,7 @@ export function SettingsView({ onBack, updateStatus, onCheckUpdate, onInstallUpd
       </div>
 
       {/* Horizontal tabs */}
-      <div className="no-drag flex shrink-0 items-center gap-0.5 border-b hairline bg-background/85 px-3 pb-1.5 pt-1">
+      <div className="no-drag flex shrink-0 items-center gap-0.5 border-b hairline bg-background px-3 pb-1.5 pt-1">
         <Tab
           active={section === "general"}
           icon={<SlidersHorizontal className="h-3 w-3" />}
@@ -319,8 +319,8 @@ function UpdateRow({
   }
 
   return (
-    <div className="card-material flex min-h-[52px] items-center gap-2.5 rounded-xl px-3 py-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--panel-2))]">
+    <div className="card-material flex min-h-[52px] items-center gap-2.5 rounded-[2px] px-3 py-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] bg-[hsl(var(--panel-2))]">
         {icon}
       </span>
       <div className="flex min-w-0 flex-1 flex-col leading-tight">
@@ -346,9 +346,9 @@ function LinkRow({
   return (
     <button
       onClick={onClick}
-      className="card-material group flex min-h-[52px] w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors hover:-translate-y-px"
+      className="card-material group flex min-h-[52px] w-full items-center gap-2.5 rounded-[2px] px-3 py-2 text-left transition-colors"
     >
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--panel-2))] text-muted-foreground group-hover:text-foreground">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] bg-[hsl(var(--panel-2))] text-muted-foreground group-hover:text-foreground">
         {icon}
       </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
@@ -376,7 +376,7 @@ function LangPill({
       className={cn(
         "rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all",
         active
-          ? "bg-background text-foreground shadow-sm"
+          ? "bg-background text-foreground"
           : "text-muted-foreground hover:text-foreground"
       )}
       onClick={onClick}
@@ -396,7 +396,7 @@ function Row({
   trailing: ReactNode;
 }) {
   return (
-    <div className="card-material flex min-h-[52px] items-center gap-3 rounded-xl px-3 py-2">
+    <div className="card-material flex min-h-[52px] items-center gap-3 rounded-[2px] px-3 py-2">
       <div className="flex min-w-0 flex-1 flex-col leading-tight">
         <span className="text-[12px] font-semibold">{label}</span>
         {desc && <span className="text-[10.5px] text-muted-foreground">{desc}</span>}
@@ -412,7 +412,7 @@ function SwitchRoot(props: Switch.SwitchProps) {
       {...props}
       className={cn(
         "relative inline-flex h-[18px] w-[30px] shrink-0 items-center rounded-full bg-black/[0.12] transition-colors dark:bg-white/[0.15]",
-        "data-[state=checked]:bg-[hsl(142_71%_45%)]"
+        "data-[state=checked]:bg-[hsl(var(--success))]"
       )}
     >
       <Switch.Thumb className="block h-3.5 w-3.5 translate-x-[2px] rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[13px]" />

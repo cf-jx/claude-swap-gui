@@ -357,7 +357,7 @@ function ListView({
           onAdd={onAdd}
         />
       ) : (
-        <div className="drag flex-1 space-y-2 overflow-y-auto bg-[hsl(var(--panel))] px-3 py-2.5">
+        <div className="drag flex-1 space-y-1.5 overflow-y-auto bg-[hsl(var(--panel))] px-3 py-2.5">
           <AnimatePresence initial={false}>
             {accounts.map((acc, index) => (
               <motion.div

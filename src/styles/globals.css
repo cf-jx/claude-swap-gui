@@ -2,86 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * Tokens are normative in DESIGN.md (project root).
- * The HSL values here are the CSS bridge — keep them in sync with the YAML
- * front-matter: each --token below maps 1:1 to a `colors.*` entry there.
- */
-
 @layer base {
-  :root {
-    /* Surfaces (parchment → white step is the primary depth signal) */
-    --background: 40 33% 97%;        /* neutral        #FAF8F4 */
-    --panel: 38 22% 93%;             /* surface-muted  #F2EEE7 */
-    --panel-2: 38 22% 89%;           /* surface-sunk   #ECE7DD */
-    --card: 0 0% 100%;               /* surface        #FFFFFF */
-
-    /* Text */
-    --foreground: 218 14% 11%;       /* primary        #171A1F */
-    --card-foreground: 218 14% 11%;
-    --primary: 218 14% 11%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 38 22% 93%;
-    --secondary-foreground: 218 14% 11%;
-    --muted: 38 22% 91%;
-    --muted-foreground: 215 9% 40%;  /* secondary      #5C6470 */
-
-    /* Accent (the single indigo) */
-    --accent: 225 70% 53%;           /* tertiary       #3357D9 */
-    --accent-foreground: 0 0% 100%;
-    --accent-soft: 220 75% 95%;      /* tertiary-soft  #EAEFFC */
-
-    /* Semantics */
-    --success: 143 54% 40%;          /* #2F9E5F */
-    --warning: 36 70% 50%;           /* #D89026 */
-    --danger: 4 63% 53%;             /* #D24A3F */
-    --destructive: 4 63% 53%;
-    --destructive-foreground: 0 0% 100%;
-
-    /* Borders */
-    --border: 38 18% 81%;            /* border         #D8D2C6 */
-    --input: 38 18% 81%;
-    --ring: 225 70% 53%;
-
-    /* Hairlines (1px outlines & dividers, tinted toward parchment) */
-    --hairline: hsl(38 17% 75% / 0.62);
-    --hairline-strong: hsl(38 17% 70% / 0.85);
-
-    --radius: 0.875rem;
+  /* ─── JetBrains Mono · self-hosted, Apache 2.0 ─── */
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
   }
 
-  .dark {
-    /* Dark mirror — parchment becomes graphite, indigo brightens */
-    --background: 222 14% 8%;
-    --panel: 222 14% 10%;
-    --panel-2: 222 14% 12%;
-    --card: 222 14% 13%;
+  :root {
+    /* Surfaces — cool paper, NOT warm parchment */
+    --background: 220 20% 97%;
+    --panel: 220 14% 93%;
+    --panel-2: 220 12% 89%;
+    --card: 0 0% 100%;
 
-    --foreground: 0 0% 97%;
-    --card-foreground: 0 0% 97%;
-    --primary: 0 0% 97%;
-    --primary-foreground: 218 14% 11%;
-    --secondary: 222 12% 18%;
-    --secondary-foreground: 0 0% 97%;
-    --muted: 222 12% 18%;
-    --muted-foreground: 220 8% 64%;
+    /* Ink — near-black, cool-tinted */
+    --foreground: 222 18% 13%;
+    --card-foreground: 222 18% 13%;
+    --primary: 222 18% 13%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 12% 92%;
+    --secondary-foreground: 222 18% 13%;
+    --muted: 220 10% 91%;
+    --muted-foreground: 220 6% 46%;
 
-    --accent: 224 96% 64%;
-    --accent-foreground: 218 14% 11%;
-    --accent-soft: 224 60% 18%;
+    /* Accent — single electric indigo */
+    --accent: 233 88% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 233 80% 95%;
 
-    --success: 148 60% 50%;
-    --warning: 38 92% 60%;
-    --danger: 4 84% 62%;
-    --destructive: 4 84% 62%;
+    /* Semantic */
+    --success: 152 55% 38%;
+    --warning: 38 78% 50%;
+    --danger: 4 68% 48%;
+    --destructive: 4 68% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 10% 24%;
-    --input: 222 10% 24%;
-    --ring: 224 96% 64%;
+    /* Rules & borders — cool gray */
+    --border: 220 10% 82%;
+    --input: 220 10% 82%;
+    --ring: 233 88% 56%;
 
-    --hairline: hsl(0 0% 100% / 0.07);
-    --hairline-strong: hsl(0 0% 100% / 0.12);
+    --hairline: hsl(220 10% 82% / 0.65);
+    --hairline-strong: hsl(220 10% 68% / 0.85);
+
+    --radius: 2px;
   }
 
   html,
@@ -90,44 +79,41 @@
     height: 100%;
   }
 
-  /*
-   * Typography — system stack only. SF on macOS, Segoe UI Variable on Win11,
-   * PingFang SC / Microsoft YaHei for CJK. Inter is intentionally absent.
-   * Numeric voice is achieved via OpenType features, not a monospace font.
-   */
   html {
     font-family:
+      'Switzer',
       -apple-system,
       BlinkMacSystemFont,
-      "SF Pro Text",
       "Segoe UI Variable Text",
       "Segoe UI",
       "PingFang SC",
       "Microsoft YaHei",
       system-ui,
       sans-serif;
-    font-feature-settings: "ss01", "cv01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-kerning: normal;
     text-rendering: optimizeLegibility;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-size: 13px;
+    line-height: 1.5;
     letter-spacing: -0.005em;
   }
 
-  /* Numerics — tabular figures + ss01 alternate digits, used everywhere a number appears */
+  /* Numeric voice — JetBrains Mono everywhere a number appears */
   .num,
   [data-num] {
-    font-feature-settings: "tnum", "ss01", "cv01";
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.005em;
+    font-feature-settings: "tnum", "ss01";
+    letter-spacing: -0.02em;
   }
 
-  /* Label-caps — short axis labels and binary status pills only */
   .caps {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.1em;
@@ -147,7 +133,6 @@
     -webkit-app-region: drag;
   }
 
-  /* 1px hairline — tinted toward parchment, never neutral gray */
   .hairline {
     border-color: var(--hairline);
   }
@@ -155,53 +140,20 @@
     border-color: var(--hairline-strong);
   }
 
-  /*
-   * Card material (DESIGN.md §Elevation): tonal contrast is the depth signal.
-   * The 8px shadow is sub-conscious — it only anchors the card, never lifts it.
-   */
+  /* Card — flat white surface, 1px cool rule, zero shadow */
   .card-material {
     background-color: hsl(var(--card));
-    box-shadow:
-      0 0 0 1px var(--hairline),
-      0 1px 0 0 hsl(0 0% 100% / 0.6) inset,
-      0 1px 2px hsl(218 14% 11% / 0.04),
-      0 4px 14px -8px hsl(218 14% 11% / 0.06);
+    box-shadow: inset 0 0 0 1px var(--hairline);
   }
-  .dark .card-material {
-    box-shadow:
-      0 0 0 1px var(--hairline),
-      0 1px 0 0 hsl(0 0% 100% / 0.04) inset,
-      0 1px 2px hsl(0 0% 0% / 0.4),
-      0 4px 14px -8px hsl(0 0% 0% / 0.55);
+  .card-material:hover {
+    box-shadow: inset 0 0 0 1.5px var(--hairline-strong);
   }
 
-  /* Active card — soft accent tint + ring + halo replaces the drop shadow */
+  /* Active card — 3px accent left bar, stronger outline */
   .card-material-active {
-    background-color: hsl(var(--accent-soft));
+    background-color: hsl(var(--card));
     box-shadow:
-      0 0 0 1px hsl(var(--accent) / 0.32),
-      0 0 0 4px hsl(var(--accent) / 0.08),
-      0 1px 0 0 hsl(0 0% 100% / 0.5) inset;
-  }
-  .dark .card-material-active {
-    background-color: hsl(var(--accent-soft) / 0.4);
-    box-shadow:
-      0 0 0 1px hsl(var(--accent) / 0.5),
-      0 0 0 4px hsl(var(--accent) / 0.1),
-      0 1px 0 0 hsl(0 0% 100% / 0.05) inset;
-  }
-
-  /* Native window shadow — used by the Tauri webview body, not by inner cards */
-  .mac-shadow {
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.04),
-      0 8px 24px -6px rgba(0, 0, 0, 0.12),
-      0 24px 48px -12px rgba(0, 0, 0, 0.18);
-  }
-  .dark .mac-shadow {
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.5),
-      0 8px 24px -6px rgba(0, 0, 0, 0.45),
-      0 24px 48px -12px rgba(0, 0, 0, 0.55);
+      inset 3px 0 0 0 hsl(var(--accent)),
+      inset 0 0 0 1px var(--hairline-strong);
   }
 }

@@ -76,114 +76,119 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
     <motion.div
       initial={{ opacity: 0, y: 3 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.14 }}
+      transition={{ duration: 0.12 }}
       className={cn(
-        "no-drag group relative overflow-hidden rounded-2xl px-3.5 py-3 transition-[box-shadow,background-color] duration-150",
+        "no-drag group relative overflow-hidden rounded-[2px] p-3 transition-[box-shadow] duration-100",
         account.is_active
-          ? "card-material-active"
-          : "card-material cursor-pointer hover:-translate-y-px"
+          ? "card-material-active pl-[15px]"
+          : "card-material cursor-pointer"
       )}
       onClick={handleClick}
     >
-      {/* Top row: index + email + status + actions */}
-      <div className="flex items-center gap-2.5">
-        <span
+      <div className="flex gap-3">
+        {/* Rank block — hero element. Outline → filled black on activate. */}
+        <div
           className={cn(
-            "num w-5 shrink-0 text-[10px] font-semibold tabular-nums",
-            account.is_active ? "text-[hsl(var(--accent))]" : "text-muted-foreground/55"
+            "num flex h-[34px] w-[38px] shrink-0 items-center justify-center rounded-[2px] text-[17px] font-semibold tracking-tight transition-colors duration-100",
+            account.is_active
+              ? "bg-foreground text-white"
+              : "border border-border text-muted-foreground/65"
           )}
         >
           {indexLabel}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold tracking-[-0.005em]">
-          {account.email}
-        </span>
-
-        <div className="flex shrink-0 items-center gap-0.5">
-          {account.is_active && (
-            <span className="mr-1 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--accent))]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--accent))] shadow-[0_0_0_3px_hsl(var(--accent)/0.18)]" />
-              {t("account.active")}
-            </span>
-          )}
-          {busy ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-          ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                onClick={handleRefresh}
-                title={t("account.refresh")}
-              >
-                <RefreshCw
-                  className={cn("h-3 w-3", refreshing && "animate-spin text-accent")}
-                />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                onClick={handleRemove}
-                title={t("account.remove")}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </>
-          )}
         </div>
-      </div>
 
-      {/* Sub-line: plan + organization */}
-      {(plan || account.organization_name) && (
-        <div className="mt-0.5 flex items-center gap-1.5 pl-[30px] text-[10.5px] text-muted-foreground/85">
-          {plan && (
-            <span
-              className="shrink-0 rounded-full border border-border/60 bg-muted/40 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-              title={plan}
-            >
-              {plan}
+        {/* Content column */}
+        <div className="min-w-0 flex-1">
+          {/* Email + actions */}
+          <div className="flex items-center gap-1.5">
+            <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold tracking-[-0.01em]">
+              {account.email}
             </span>
-          )}
-          {account.organization_name && (
-            <span className="min-w-0 truncate">{account.organization_name}</span>
-          )}
-        </div>
-      )}
+            <div className="flex shrink-0 items-center gap-0.5">
+              {account.is_active && (
+                <span className="mr-0.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
+                  <span className="h-[5px] w-[5px] bg-[hsl(var(--accent))]" />
+                  {t("account.active")}
+                </span>
+              )}
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={handleRefresh}
+                    title={t("account.refresh")}
+                  >
+                    <RefreshCw
+                      className={cn("h-3 w-3", refreshing && "animate-spin text-accent")}
+                    />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    onClick={handleRemove}
+                    title={t("account.remove")}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
 
-      {/* Usage block */}
-      <div className="mt-2.5 pl-[30px]">
-        {hasUsage && hasAnyBucket ? (
-          <div className="space-y-1.5">
-            {buckets.map((b) => (
-              <UsageBar
-                key={b.key}
-                label={b.label}
-                bucket={b}
-                indicatorColor={usageColor(b.pct)}
-              />
-            ))}
+          {/* Plan + organization sub-line */}
+          {(plan || account.organization_name) && (
+            <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+              {plan && (
+                <span className="num shrink-0 border border-border px-1.5 py-px text-[8.5px] font-bold uppercase tracking-[0.1em] text-foreground/75">
+                  {plan}
+                </span>
+              )}
+              {account.organization_name && (
+                <span className="min-w-0 truncate">{account.organization_name}</span>
+              )}
+            </div>
+          )}
+
+          {/* Usage bars */}
+          <div className="mt-2">
+            {hasUsage && hasAnyBucket ? (
+              <div className="space-y-1.5">
+                {buckets.map((b) => (
+                  <UsageBar
+                    key={b.key}
+                    label={b.label}
+                    bucket={b}
+                    indicatorColor={usageColor(b.pct)}
+                  />
+                ))}
+              </div>
+            ) : usage.status === "no_credentials" ? (
+              <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span className="truncate">{t("account.noCredentials")}</span>
+              </div>
+            ) : usage.status === "unavailable" && !usage.message?.trim() ? (
+              <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/70">
+                <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                <span className="truncate">{t("account.usageLoading")}</span>
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground"
+                title={usage.status === "unavailable" ? usage.message : undefined}
+              >
+                <AlertTriangle className="h-3 w-3 shrink-0 text-[hsl(var(--warning))]" />
+                <span className="truncate">{t("account.usageFailed")}</span>
+              </div>
+            )}
           </div>
-        ) : usage.status === "no_credentials" ? (
-          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/85">
-            <AlertCircle className="h-3 w-3 shrink-0" />
-            <span className="truncate">{t("account.noCredentials")}</span>
-          </div>
-        ) : usage.status === "unavailable" && !usage.message?.trim() ? (
-          <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/70">
-            <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-            <span className="truncate">{t("account.usageLoading")}</span>
-          </div>
-        ) : (
-          <div
-            className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground/85"
-            title={usage.status === "unavailable" ? usage.message : undefined}
-          >
-            <AlertTriangle className="h-3 w-3 shrink-0 text-[hsl(var(--warning))]" />
-            <span className="truncate">{t("account.usageFailed")}</span>
-          </div>
-        )}
+        </div>
       </div>
     </motion.div>
   );
