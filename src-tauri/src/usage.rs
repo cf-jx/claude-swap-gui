@@ -16,6 +16,7 @@ use tokio::sync::Mutex;
 use crate::credentials;
 
 const USAGE_URL: &str = "https://api.anthropic.com/api/oauth/usage";
+const PROFILE_URL: &str = "https://api.anthropic.com/api/oauth/profile";
 const TOKEN_URL: &str = "https://platform.claude.com/v1/oauth/token";
 const OAUTH_BETA_HEADER: &str = "oauth-2025-04-20";
 const OAUTH_CLIENT_ID: &str = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
@@ -44,6 +45,8 @@ pub struct Bucket {
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct Usage {
     pub buckets: Vec<Bucket>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -68,6 +71,32 @@ struct OauthPayload {
 struct CredsEnvelope {
     #[serde(rename = "claudeAiOauth")]
     claude_ai_oauth: Option<OauthPayload>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct ProfileAccount {
+    #[serde(default)]
+    has_claude_max: bool,
+    #[serde(default)]
+    has_claude_pro: bool,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct ProfileOrganization {
+    #[serde(default)]
+    organization_type: Option<String>,
+    #[serde(default)]
+    rate_limit_tier: Option<String>,
+    #[serde(default)]
+    seat_tier: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ProfileResponse {
+    #[serde(default)]
+    account: ProfileAccount,
+    #[serde(default)]
+    organization: ProfileOrganization,
 }
 
 #[derive(Debug, Deserialize)]
@@ -150,7 +179,10 @@ fn build_result(raw: serde_json::Value) -> Usage {
         .collect();
 
     buckets.sort_by(|a, b| bucket_rank(&a.key).cmp(&bucket_rank(&b.key)));
-    Usage { buckets }
+    Usage {
+        buckets,
+        plan: None,
+    }
 }
 
 /// Sort key: 5h before 7d, base form before model-suffixed variants, then alpha.
@@ -210,6 +242,81 @@ async fn request_usage(
         .await?
         .error_for_status()?;
     Ok(resp.json().await?)
+}
+
+async fn request_profile(
+    client: &reqwest::Client,
+    access_token: &str,
+) -> anyhow::Result<ProfileResponse> {
+    let resp = client
+        .get(PROFILE_URL)
+        .bearer_auth(access_token)
+        .header("anthropic-beta", OAUTH_BETA_HEADER)
+        .header("User-Agent", USER_AGENT)
+        .send()
+        .await?
+        .error_for_status()?;
+    Ok(resp.json().await?)
+}
+
+/// Map a profile response to a short, user-facing plan label.
+///
+/// Conventions observed against the live API:
+/// - Personal plans: `organization.organization_type` is `claude_pro`/`claude_max`/`claude_free`,
+///   plus `account.has_claude_pro`/`has_claude_max` flags.
+/// - Team/Enterprise plans: `organization_type` is `claude_team`/`claude_enterprise`, with
+///   `seat_tier` carrying the variant (`team_standard`, `team_max_5x`, etc.).
+/// - 5x vs 20x distinction lives in `rate_limit_tier`/`seat_tier` substrings.
+fn classify_plan(profile: &ProfileResponse) -> Option<String> {
+    let org_type = profile
+        .organization
+        .organization_type
+        .as_deref()
+        .unwrap_or("");
+    let seat = profile.organization.seat_tier.as_deref().unwrap_or("");
+    let rate = profile.organization.rate_limit_tier.as_deref().unwrap_or("");
+
+    let max_suffix = |s: &str| -> Option<&'static str> {
+        if s.contains("max_20x") || s.contains("max20x") || s.contains("20x") {
+            Some("Max 20x")
+        } else if s.contains("max_5x") || s.contains("max5x") || s.contains("5x") || s.contains("max")
+        {
+            Some("Max 5x")
+        } else {
+            None
+        }
+    };
+
+    if matches!(org_type, "claude_team" | "claude_enterprise") {
+        let scope = if org_type == "claude_enterprise" {
+            "Enterprise"
+        } else {
+            "Team"
+        };
+        let suffix = max_suffix(seat)
+            .or_else(|| {
+                if !seat.is_empty() {
+                    // standard / pro / unknown non-max → treat as Pro tier seat
+                    Some("Pro")
+                } else {
+                    None
+                }
+            });
+        return Some(match suffix {
+            Some(s) => format!("{scope} {s}"),
+            None => scope.to_string(),
+        });
+    }
+
+    if profile.account.has_claude_max || org_type == "claude_max" {
+        return Some(max_suffix(rate).unwrap_or("Max 5x").to_string());
+    }
+
+    if profile.account.has_claude_pro || org_type == "claude_pro" {
+        return Some("Pro".into());
+    }
+
+    Some("Free".into())
 }
 
 async fn refresh_token(client: &reqwest::Client, refresh: &str) -> anyhow::Result<TokenResponse> {
@@ -311,9 +418,14 @@ pub async fn fetch_for_account(
         None => return UsageState::NoCredentials,
     };
 
-    match request_usage(&client, access).await {
+    let (usage_res, profile_res) =
+        tokio::join!(request_usage(&client, access), request_profile(&client, access));
+
+    match usage_res {
         Ok(api) => {
-            let state = UsageState::Ok(build_result(api));
+            let mut usage = build_result(api);
+            usage.plan = profile_res.ok().and_then(|p| classify_plan(&p));
+            let state = UsageState::Ok(usage);
             remember_usage(cache_key, state.clone()).await;
             state
         }
@@ -332,8 +444,15 @@ pub async fn fetch_for_account(
                             {
                                 tracing::warn!("failed to persist refreshed token: {e:?}");
                             }
-                            if let Ok(api) = request_usage(&client, &new_token.access_token).await {
-                                let state = UsageState::Ok(build_result(api));
+                            let access2 = &new_token.access_token;
+                            let (u2, p2) = tokio::join!(
+                                request_usage(&client, access2),
+                                request_profile(&client, access2),
+                            );
+                            if let Ok(api) = u2 {
+                                let mut usage = build_result(api);
+                                usage.plan = p2.ok().and_then(|p| classify_plan(&p));
+                                let state = UsageState::Ok(usage);
                                 remember_usage(cache_key, state.clone()).await;
                                 return state;
                             }

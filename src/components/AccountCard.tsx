@@ -69,6 +69,7 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
   const hasUsage = usage.status === "ok";
   const buckets = hasUsage ? usage.buckets : [];
   const hasAnyBucket = buckets.length > 0;
+  const plan = hasUsage ? usage.plan ?? null : null;
   const indexLabel = String(orderNumber).padStart(2, "0");
 
   return (
@@ -134,10 +135,20 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
         </div>
       </div>
 
-      {/* Sub-line: organization */}
-      {account.organization_name && (
-        <div className="mt-0.5 truncate pl-[30px] text-[10.5px] text-muted-foreground/85">
-          {account.organization_name}
+      {/* Sub-line: plan + organization */}
+      {(plan || account.organization_name) && (
+        <div className="mt-0.5 flex items-center gap-1.5 pl-[30px] text-[10.5px] text-muted-foreground/85">
+          {plan && (
+            <span
+              className="shrink-0 rounded-full border border-border/60 bg-muted/40 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+              title={plan}
+            >
+              {plan}
+            </span>
+          )}
+          {account.organization_name && (
+            <span className="min-w-0 truncate">{account.organization_name}</span>
+          )}
         </div>
       )}
 

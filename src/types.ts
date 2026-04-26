@@ -8,10 +8,11 @@ export interface Bucket {
 
 export interface Usage {
   buckets: Bucket[];
+  plan?: string | null;
 }
 
 export type UsageState =
-  | { status: "ok"; buckets: Bucket[] }
+  | { status: "ok"; buckets: Bucket[]; plan?: string | null }
   | { status: "no_credentials" }
   | { status: "unavailable"; message: string };
 
