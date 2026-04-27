@@ -13,7 +13,7 @@ export function UsageBar({ label, bucket, indicatorColor }: Props) {
   const countdown = bucket?.countdown?.trim();
   return (
     <div className="flex items-center gap-2">
-      <span className="w-[52px] shrink-0 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70">
+      <span className="w-[68px] shrink-0 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/70">
         {label}
       </span>
       <Progress
