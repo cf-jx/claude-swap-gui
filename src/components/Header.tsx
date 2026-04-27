@@ -30,16 +30,47 @@ export function Header({
   return (
     <header
       data-tauri-drag-region
-      className="drag relative shrink-0 border-b hairline-strong bg-background cursor-move"
+      className="drag relative shrink-0 bg-background cursor-move"
     >
-      {/* Masthead — Swiss wordmark */}
-      <div data-tauri-drag-region className="flex h-[38px] items-center px-3">
+      {/* Top bar — brand left, cost right */}
+      <div data-tauri-drag-region className="flex h-[36px] items-center px-3">
         <span
           data-tauri-drag-region
           className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground"
         >
           Claude Swap
         </span>
+        {hasTokens && (
+          <div
+            data-tauri-drag-region
+            className="ml-auto flex items-baseline gap-3 mr-1"
+            title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
+          >
+            <span className="num text-[11px] font-semibold text-foreground">
+              {formatUsd(tokenTotals.total_cost_usd)}
+            </span>
+            <span className="num text-[10px] font-medium text-muted-foreground">
+              {formatTokenCount(tokenTotals.total_tokens)} TKN
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Heavy rule */}
+      <div className="rule-heavy" />
+
+      {/* Sub-header — version+count left, icons right */}
+      <div data-tauri-drag-region className="flex h-[28px] items-center px-3">
+        <div
+          data-tauri-drag-region
+          className="pointer-events-none flex items-center gap-1 text-[9px] text-muted-foreground"
+        >
+          {appVersion && <span className="num font-medium">v{appVersion}</span>}
+          {appVersion && accountCount > 0 && <span>·</span>}
+          {accountCount > 0 && (
+            <span className="num">{t("header.accountCount", { count: accountCount })}</span>
+          )}
+        </div>
         <div className="no-drag ml-auto flex shrink-0 items-center gap-0.5">
           <Button variant="ghost" size="icon" onClick={onRefresh} title={t("header.refresh")}>
             <RefreshCw className={refreshing ? "h-3.5 w-3.5 animate-spin" : "h-3.5 w-3.5"} />
@@ -70,44 +101,8 @@ export function Header({
         </div>
       </div>
 
-      {/* Stat strip — dominant USD as the typographic hero */}
-      {hasTokens && (
-        <div
-          data-tauri-drag-region
-          className="flex items-baseline gap-4 border-t hairline px-3 py-2"
-          title={`${t("header.tokensTitle")}: ${tokenTotals.total_tokens.toLocaleString()}`}
-        >
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[8.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70">
-              SPENT
-            </span>
-            <span className="num text-[16px] font-semibold tracking-tight text-foreground">
-              {formatUsd(tokenTotals.total_cost_usd)}
-            </span>
-          </div>
-          <span aria-hidden className="h-3 w-px bg-[hsl(var(--border))]" />
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[8.5px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70">
-              TOKENS
-            </span>
-            <span className="num text-[13px] font-medium tracking-tight text-foreground/85">
-              {formatTokenCount(tokenTotals.total_tokens)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Meta — version + count, quietest line */}
-      <div
-        data-tauri-drag-region
-        className="pointer-events-none flex items-center gap-1.5 border-t hairline px-3 py-1 text-[10px] text-muted-foreground/65"
-      >
-        {appVersion && <span className="num font-medium">v{appVersion}</span>}
-        {appVersion && accountCount > 0 && <span>·</span>}
-        {accountCount > 0 && (
-          <span className="num">{t("header.accountCount", { count: accountCount })}</span>
-        )}
-      </div>
+      {/* Light rule */}
+      <div className="rule-light" />
     </header>
   );
 }

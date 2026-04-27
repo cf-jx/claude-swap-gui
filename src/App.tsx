@@ -392,7 +392,7 @@ function ListView({
           onAdd={onAdd}
         />
       ) : (
-        <div className="drag flex-1 space-y-1.5 overflow-y-auto bg-[hsl(var(--panel))] px-3 py-2.5">
+        <div className="drag flex-1 overflow-y-auto bg-background scroll-thin">
           <AnimatePresence initial={false}>
             {accounts.map((acc, index) => (
               <motion.div
@@ -401,6 +401,7 @@ function ListView({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
+                {index > 0 && <div className="rule-heavy mx-3" />}
                 <AccountCard
                   account={acc}
                   orderNumber={index + 1}
