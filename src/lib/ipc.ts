@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AccountsSnapshot, AddOutcome, BackupSummary, UsageState } from "@/types";
+import type { AccountsSnapshot, AddOutcome, BackupSummary, ImportSummary, UsageState } from "@/types";
 
 export const ipc = {
   listAccounts: () => invoke<AccountsSnapshot>("list_accounts"),
@@ -10,4 +10,6 @@ export const ipc = {
   removeAccount: (identifier: string) => invoke<void>("remove_account", { identifier }),
   backupAccounts: (destinationDir: string) =>
     invoke<BackupSummary>("backup_accounts", { destinationDir }),
+  importBackup: (sourceDir: string) =>
+    invoke<ImportSummary>("import_backup", { sourceDir }),
 };

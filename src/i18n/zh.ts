@@ -87,6 +87,12 @@ export const zh = {
 
   "list.loading": "加载中…",
   "list.readFailed": "读取失败：{{error}}",
+
+  "action.import": "导入",
+  "import.pickFolder": "选择备份目录",
+  "import.cancelled": "已取消导入",
+  "import.done": "导入完成：新增 {{imported}} 个，刷新 {{refreshed}} 个，跳过 {{skipped}} 个",
+  "import.failed": "导入失败",
 } as const;
 
 export type MessageKey = keyof typeof zh;

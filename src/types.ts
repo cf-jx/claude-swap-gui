@@ -54,6 +54,13 @@ export interface BackupSummary {
   missing_configs: number;
 }
 
+export interface ImportSummary {
+  imported: number;
+  refreshed: number;
+  skipped: number;
+  errors: string[];
+}
+
 export type AddOutcome =
   | { status: "added"; slot: number; email: string }
   | { status: "refreshed"; slot: number; email: string };

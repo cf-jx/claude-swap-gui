@@ -6,7 +6,7 @@ use crate::claude_config;
 use crate::credentials;
 use crate::sequence::{self, SequenceError};
 use crate::settings::Settings;
-use crate::switcher::{self, AddOutcome, BackupSummary};
+use crate::switcher::{self, AddOutcome, BackupSummary, ImportSummary};
 use crate::token_stats;
 use crate::types::{AccountDto, AccountsSnapshot};
 use crate::usage::{self, UsageState};
@@ -172,6 +172,14 @@ pub async fn remove_account(identifier: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn backup_accounts(destination_dir: String) -> Result<BackupSummary, String> {
     tokio::task::spawn_blocking(move || switcher::backup_accounts(&destination_dir))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn import_backup(source_dir: String) -> Result<ImportSummary, String> {
+    tokio::task::spawn_blocking(move || switcher::import_backup(&source_dir))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())

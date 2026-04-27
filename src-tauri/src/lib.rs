@@ -88,6 +88,7 @@ pub fn run() {
             commands::add_current_account,
             commands::remove_account,
             commands::backup_accounts,
+            commands::import_backup,
             commands::get_settings,
             commands::set_settings,
         ])

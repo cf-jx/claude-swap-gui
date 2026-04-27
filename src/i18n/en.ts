@@ -89,4 +89,10 @@ export const en: Record<MessageKey, string> = {
 
   "list.loading": "Loading…",
   "list.readFailed": "Load failed: {{error}}",
+
+  "action.import": "Import",
+  "import.pickFolder": "Select backup folder",
+  "import.cancelled": "Import cancelled",
+  "import.done": "Import done: {{imported}} added, {{refreshed}} refreshed, {{skipped}} skipped",
+  "import.failed": "Import failed",
 };

@@ -1,4 +1,4 @@
-import { Activity, ArrowRightLeft, Archive, Plus } from "lucide-react";
+import { Activity, ArrowRightLeft, Archive, Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
 import { formatHotkey } from "@/lib/format";
@@ -7,6 +7,7 @@ interface Props {
   onAdd: () => void;
   onSwitchNext: () => void;
   onBackup: () => void;
+  onImport: () => void;
   onValidate: () => void;
   hasMultiple: boolean;
   busy?: boolean;
@@ -17,6 +18,7 @@ export function ActionBar({
   onAdd,
   onSwitchNext,
   onBackup,
+  onImport,
   onValidate,
   hasMultiple,
   busy,
@@ -42,7 +44,7 @@ export function ActionBar({
           </span>
         )}
       </Button>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-4 gap-1.5">
         <Button
           variant="outline"
           size="sm"
@@ -62,6 +64,16 @@ export function ActionBar({
         >
           <Archive className="h-3 w-3" />
           {t("action.backup")}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onImport}
+          disabled={busy}
+          className="h-7 text-[10.5px] font-semibold uppercase tracking-[0.06em]"
+        >
+          <Download className="h-3 w-3" />
+          {t("action.import")}
         </Button>
         <Button
           variant="outline"

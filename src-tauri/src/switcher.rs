@@ -544,6 +544,122 @@ pub fn resolve_identifier(seq: &SequenceFile, identifier: &str) -> Option<String
         .map(|(k, _)| k.clone())
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ImportSummary {
+    pub imported: usize,
+    pub refreshed: usize,
+    pub skipped: usize,
+    pub errors: Vec<String>,
+}
+
+pub fn import_backup(source_dir: &str) -> Result<ImportSummary, SwitchError> {
+    ensure_backup_dirs()?;
+    let _lock = FileLock::acquire(&lock_path(), LOCK_TIMEOUT)?;
+
+    let backup_path = Path::new(source_dir);
+    let backup_seq_text = fs::read_to_string(backup_path.join("sequence.json"))?;
+    let backup_seq: SequenceFile = serde_json::from_str(&backup_seq_text)?;
+
+    let mut seq = load_sequence_or_empty();
+    let mut summary = ImportSummary {
+        imported: 0,
+        refreshed: 0,
+        skipped: 0,
+        errors: Vec::new(),
+    };
+
+    for (slot, record) in &backup_seq.accounts {
+        let creds_filename = format!(".creds-{}-{}.json", slot, record.email);
+        let creds_path = backup_path.join("credentials").join(&creds_filename);
+
+        let creds = match fs::read_to_string(&creds_path) {
+            Ok(c) if !c.is_empty() => c,
+            Ok(_) => {
+                summary.skipped += 1;
+                summary.errors.push(format!(
+                    "slot {slot} ({}): credentials file is empty",
+                    record.email
+                ));
+                continue;
+            }
+            Err(e) => {
+                summary.skipped += 1;
+                summary.errors.push(format!(
+                    "slot {slot} ({}): missing credentials — {e}",
+                    record.email
+                ));
+                continue;
+            }
+        };
+
+        let config_filename = format!(".claude-config-{}-{}.json", slot, record.email);
+        let config_path = backup_path.join("configs").join(&config_filename);
+        let config = fs::read_to_string(&config_path).unwrap_or_default();
+
+        // Check if this account already exists in our sequence.
+        if let Some(existing_slot) = find_slot_by_identity(&seq, &record.email, &record.organization_uuid) {
+            // Refresh credentials in place.
+            if let Err(e) = write_account(&existing_slot, &record.email, &creds) {
+                summary.errors.push(format!(
+                    "slot {slot} ({}): failed to write credentials — {e}",
+                    record.email
+                ));
+                continue;
+            }
+            if !config.is_empty() {
+                if let Err(e) = write_account_config(&existing_slot, &record.email, &config) {
+                    summary.errors.push(format!(
+                        "slot {slot} ({}): failed to write config — {e}",
+                        record.email
+                    ));
+                }
+            }
+            summary.refreshed += 1;
+        } else {
+            // New account — assign next slot.
+            let new_slot_num = next_slot(&seq);
+            let new_key = new_slot_num.to_string();
+
+            if let Err(e) = write_account(&new_key, &record.email, &creds) {
+                summary.errors.push(format!(
+                    "slot {slot} ({}): failed to write credentials — {e}",
+                    record.email
+                ));
+                continue;
+            }
+            if !config.is_empty() {
+                if let Err(e) = write_account_config(&new_key, &record.email, &config) {
+                    summary.errors.push(format!(
+                        "slot {slot} ({}): failed to write config — {e}",
+                        record.email
+                    ));
+                }
+            }
+
+            seq.accounts.insert(
+                new_key,
+                AccountRecord {
+                    email: record.email.clone(),
+                    uuid: record.uuid.clone(),
+                    organization_uuid: record.organization_uuid.clone(),
+                    organization_name: record.organization_name.clone(),
+                    added: Some(timestamp()),
+                },
+            );
+            if !seq.sequence.contains(&new_slot_num) {
+                seq.sequence.push(new_slot_num);
+                seq.sequence.sort();
+            }
+            summary.imported += 1;
+        }
+    }
+
+    seq.last_updated = Some(timestamp());
+    write_sequence(&seq)?;
+
+    Ok(summary)
+}
+
 // Convenience: force path import used above when PathBuf isn't otherwise used.
 #[allow(dead_code)]
 fn _ensure_path_import(_: &Path) {}

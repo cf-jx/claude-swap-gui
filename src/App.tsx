@@ -196,6 +196,38 @@ function AppInner() {
       setBusy(false);
     }
   }, [busy, t]);
+  const handleImport = useCallback(async () => {
+    if (busy) return;
+    const picked = await openDialog({
+      directory: true,
+      multiple: false,
+      title: t("import.pickFolder"),
+    });
+    const source = Array.isArray(picked) ? picked[0] : picked;
+    if (!source) {
+      toast(t("import.cancelled"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const summary = await ipc.importBackup(source);
+      toast.success(
+        t("import.done", {
+          imported: String(summary.imported),
+          refreshed: String(summary.refreshed),
+          skipped: String(summary.skipped),
+        })
+      );
+      if (summary.errors.length > 0) {
+        summary.errors.forEach((err) => toast.error(err));
+      }
+      await refresh();
+    } catch (e) {
+      toast.error(String(e).replace(/^Error: /, ""));
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, refresh, t]);
   const handleValidate = useCallback(async () => {
     if (busy || !data?.accounts.length) return;
     setBusy(true);
@@ -267,6 +299,7 @@ function AppInner() {
           onSwitchNext={handleSwitchNext}
           onAdd={handleAdd}
           onBackup={handleBackup}
+          onImport={handleImport}
           onValidate={handleValidate}
           onRemove={handleRemove}
           onUsagePatch={patchUsage}
@@ -296,6 +329,7 @@ interface ListProps {
   onSwitchNext: () => void;
   onAdd: () => void;
   onBackup: () => void;
+  onImport: () => void;
   onValidate: () => void;
   onRemove: (a: Account) => void;
   onUsagePatch: (slot: number, usage: UsageState) => void;
@@ -315,6 +349,7 @@ function ListView({
   onSwitchNext,
   onAdd,
   onBackup,
+  onImport,
   onValidate,
   onRemove,
   onUsagePatch,
@@ -389,6 +424,7 @@ function ListView({
           onAdd={onAdd}
           onSwitchNext={onSwitchNext}
           onBackup={onBackup}
+          onImport={onImport}
           onValidate={onValidate}
           hasMultiple={hasMultiple}
           busy={busy}
