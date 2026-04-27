@@ -100,12 +100,17 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
 
         {/* Content column */}
         <div className="min-w-0 flex-1">
-          {/* Email + actions */}
+          {/* Email + plan + actions */}
           <div className="flex items-center gap-1.5">
             <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold tracking-[-0.01em]">
               {account.email}
             </span>
             <div className="flex shrink-0 items-center gap-0.5">
+              {plan && (
+                <span className="num mr-0.5 shrink-0 border border-border px-1.5 py-px text-[8.5px] font-bold uppercase tracking-[0.1em] text-foreground/75">
+                  {plan}
+                </span>
+              )}
               {account.is_active && (
                 <span className="mr-0.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[hsl(var(--accent))]">
                   <span className="h-[5px] w-[5px] bg-[hsl(var(--accent))]" />
@@ -140,20 +145,6 @@ export function AccountCard({ account, orderNumber, onSwitch, onRemove, onUsageP
               )}
             </div>
           </div>
-
-          {/* Plan + organization sub-line */}
-          {(plan || account.organization_name) && (
-            <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
-              {plan && (
-                <span className="num shrink-0 border border-border px-1.5 py-px text-[8.5px] font-bold uppercase tracking-[0.1em] text-foreground/75">
-                  {plan}
-                </span>
-              )}
-              {account.organization_name && (
-                <span className="min-w-0 truncate">{account.organization_name}</span>
-              )}
-            </div>
-          )}
 
           {/* Usage bars */}
           <div className="mt-2">
