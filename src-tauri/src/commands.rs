@@ -13,10 +13,12 @@ use crate::usage::{self, UsageState};
 
 #[tauri::command]
 pub async fn list_accounts() -> Result<AccountsSnapshot, String> {
-    tokio::task::spawn_blocking(switcher::import_stored_accounts)
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| e.to_string())?;
+    tokio::task::spawn_blocking(|| {
+        let _ = switcher::import_stored_accounts();
+        switcher::sync_active_credentials();
+    })
+    .await
+    .map_err(|e| e.to_string())?;
 
     let active = claude_config::active_identity();
     let no_active_login = active.is_none();

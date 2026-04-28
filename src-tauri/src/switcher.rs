@@ -458,6 +458,26 @@ pub fn add_current() -> Result<AddOutcome, SwitchError> {
 
     let mut seq = load_sequence_or_empty();
 
+    // If the tracked active account differs from the current login, the user
+    // ran `claude login` externally.  The old account's latest credentials in
+    // ~/.claude/.credentials.json have already been overwritten — the keyring
+    // backup may hold a stale (consumed) refresh token.
+    if let Some(tracked_num) = seq.active_account_number {
+        let tracked_key = tracked_num.to_string();
+        if let Some(tracked_record) = seq.accounts.get(&tracked_key) {
+            if tracked_record.email != email || tracked_record.organization_uuid != org_uuid {
+                tracing::warn!(
+                    "active identity changed from {} (slot {}) to {}; \
+                     slot {} credentials may be stale — re-login recommended",
+                    tracked_record.email,
+                    tracked_key,
+                    email,
+                    tracked_key,
+                );
+            }
+        }
+    }
+
     // Existing identity → refresh in place.
     if let Some(slot) = find_slot_by_identity(&seq, &email, &org_uuid) {
         write_account(&slot, &email, &creds).map_err(SwitchError::Other)?;
@@ -528,6 +548,43 @@ pub fn remove(slot: &str) -> Result<(), SwitchError> {
     seq.last_updated = Some(timestamp());
     write_sequence(&seq)?;
     Ok(())
+}
+
+/// Sync the active account's credentials to the keyring backup.
+///
+/// Claude Code silently refreshes OAuth tokens while an account is active,
+/// writing new tokens to `~/.claude/.credentials.json`. The keyring backup
+/// is NOT updated during these refreshes, so a subsequent `claude login`
+/// (which overwrites the active file) can leave the keyring with a stale,
+/// already-consumed refresh token.
+///
+/// Call this periodically (e.g. when the GUI refreshes the account list) to
+/// keep the keyring backup in sync with the active file.
+pub fn sync_active_credentials() {
+    let seq = match sequence::load() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+    let (email, org_uuid) = match current_identity() {
+        Some(id) => id,
+        None => return,
+    };
+    let slot = match find_slot_by_identity(&seq, &email, &org_uuid) {
+        Some(s) => s,
+        None => return,
+    };
+    if seq.active_account_number.map(|n| n.to_string()).as_deref() != Some(slot.as_str()) {
+        return;
+    }
+    let creds = match read_active() {
+        Some(c) if !c.is_empty() => c,
+        _ => return,
+    };
+    let _ = write_account(&slot, &email, &creds);
+    let config_text = std::fs::read_to_string(claude_config()).ok();
+    if let Some(cfg) = config_text {
+        let _ = write_account_config(&slot, &email, &cfg);
+    }
 }
 
 /// Utility for commands: resolve "1" or "email@x" to a slot key.
