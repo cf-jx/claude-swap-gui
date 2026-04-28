@@ -170,18 +170,18 @@ function AppInner() {
   );
   const handleBackup = useCallback(async () => {
     if (busy) return;
-    const picked = await openDialog({
-      directory: true,
-      multiple: false,
-      title: t("backup.pickFolder"),
-    });
-    const destination = Array.isArray(picked) ? picked[0] : picked;
-    if (!destination) {
-      toast(t("backup.cancelled"));
-      return;
-    }
     setBusy(true);
     try {
+      const picked = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t("backup.pickFolder"),
+      });
+      const destination = Array.isArray(picked) ? picked[0] : picked;
+      if (!destination) {
+        toast(t("backup.cancelled"));
+        return;
+      }
       const summary = await ipc.backupAccounts(destination);
       toast.success(
         t("backup.done", {
@@ -198,18 +198,18 @@ function AppInner() {
   }, [busy, t]);
   const handleImport = useCallback(async () => {
     if (busy) return;
-    const picked = await openDialog({
-      directory: true,
-      multiple: false,
-      title: t("import.pickFolder"),
-    });
-    const source = Array.isArray(picked) ? picked[0] : picked;
-    if (!source) {
-      toast(t("import.cancelled"));
-      return;
-    }
     setBusy(true);
     try {
+      const picked = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t("import.pickFolder"),
+      });
+      const source = Array.isArray(picked) ? picked[0] : picked;
+      if (!source) {
+        toast(t("import.cancelled"));
+        return;
+      }
       const summary = await ipc.importBackup(source);
       toast.success(
         t("import.done", {
@@ -232,16 +232,22 @@ function AppInner() {
     if (busy || !data?.accounts.length) return;
     setBusy(true);
     try {
-      const results = await Promise.all(
+      const settled = await Promise.allSettled(
         data.accounts.map(async (account) => {
           const usage = await ipc.refreshUsage(account.slot);
           patchUsage(account.slot, usage);
           return usage;
         })
       );
-      const invalid = results.filter((usage) => usage.status !== "ok").length;
-      if (invalid > 0) {
-        toast.error(t("validate.failed", { count: String(invalid) }));
+      const fulfilled = settled.filter(
+        (r): r is PromiseFulfilledResult<UsageState> => r.status === "fulfilled"
+      );
+      const invalid = fulfilled.filter((r) => r.value.status !== "ok").length;
+      const errored = settled.length - fulfilled.length;
+      if (invalid > 0 || errored > 0) {
+        toast.error(
+          t("validate.failed", { count: String(invalid + errored) })
+        );
       } else {
         toast.success(t("validate.done"));
       }

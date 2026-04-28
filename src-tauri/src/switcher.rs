@@ -314,35 +314,43 @@ pub fn switch_to(target: &str) -> Result<String, SwitchError> {
     let target_record = seq.accounts[target].clone();
     let target_email = target_record.email.clone();
 
-    let (current_email, current_org_uuid) = current_identity().ok_or(SwitchError::NoActiveLogin)?;
-    let current_slot = find_slot_by_identity(&seq, &current_email, &current_org_uuid)
-        .unwrap_or_else(|| {
-            // current login not yet managed — fabricate a ghost slot so backup
-            // goes nowhere and we just overwrite.
-            String::new()
-        });
+    // Allow switching even when no account is currently active (e.g. after
+    // `claude logout` or a corrupted config).  We just skip the backup step.
+    let current_identity = current_identity();
+    let current_slot = current_identity
+        .as_ref()
+        .and_then(|(email, org)| find_slot_by_identity(&seq, email, org))
+        .unwrap_or_default();
 
-    // Snapshot originals for rollback.
-    let original_creds = read_active()
-        .ok_or_else(|| SwitchError::Msg("failed to read active credentials".into()))?;
-    let original_config_text = fs::read_to_string(claude_config())?;
+    let original_creds = read_active();
+    let original_config_text = fs::read_to_string(claude_config()).ok();
     let original_seq_text = fs::read_to_string(sequence_file()).ok();
 
-    let rollback = |creds: &str, config_text: &str, seq_text: &Option<String>| {
-        let _ = write_active(creds);
-        let _ = atomic_write(&claude_config(), config_text.as_bytes());
+    let rollback = |creds: &Option<String>, config_text: &Option<String>, seq_text: &Option<String>| {
+        if let Some(c) = creds.as_ref() {
+            let _ = write_active(c);
+        }
+        if let Some(cfg) = config_text.as_ref() {
+            let _ = atomic_write(&claude_config(), cfg.as_bytes());
+        }
         if let Some(t) = seq_text.as_ref() {
             let _ = atomic_write(&sequence_file(), t.as_bytes());
         }
     };
 
     // Step 1 — back up the currently-active account (if it has a managed slot).
-    if !current_slot.is_empty() {
-        if let Err(e) = write_account(&current_slot, &current_email, &original_creds) {
-            return Err(SwitchError::Msg(format!("backup creds failed: {e}")));
-        }
-        if let Err(e) = write_account_config(&current_slot, &current_email, &original_config_text) {
-            return Err(SwitchError::Msg(format!("backup config failed: {e}")));
+    if let (Some((ref email, _)), Some(ref creds)) =
+        (&current_identity, &original_creds)
+    {
+        if !current_slot.is_empty() {
+            if let Err(e) = write_account(&current_slot, email, creds) {
+                tracing::warn!("backup creds for slot {current_slot} failed: {e}");
+            }
+            if let Some(ref cfg) = original_config_text {
+                if let Err(e) = write_account_config(&current_slot, email, cfg) {
+                    tracing::warn!("backup config for slot {current_slot} failed: {e}");
+                }
+            }
         }
     }
 
@@ -375,9 +383,13 @@ pub fn switch_to(target: &str) -> Result<String, SwitchError> {
         return Err(SwitchError::Msg(format!("activate creds failed: {e}")));
     }
 
-    // Step 4 — splice target oauthAccount into the live config (keep all other
-    // fields from the current config so nothing else in ~/.claude.json is lost).
-    let mut live_config: Value = serde_json::from_str(&original_config_text)?;
+    // Step 4 — splice target oauthAccount into the live config.  If there is
+    // an existing config, merge into it to preserve non-oauth fields; otherwise
+    // use the target's full config as-is.
+    let mut live_config: Value = original_config_text
+        .as_deref()
+        .and_then(|t| serde_json::from_str(t).ok())
+        .unwrap_or_else(|| target_config_value.clone());
     if let Some(obj) = live_config.as_object_mut() {
         obj.insert("oauthAccount".into(), target_oauth);
     }
@@ -561,10 +573,15 @@ pub fn remove(slot: &str) -> Result<(), SwitchError> {
 /// Call this periodically (e.g. when the GUI refreshes the account list) to
 /// keep the keyring backup in sync with the active file.
 pub fn sync_active_credentials() {
+    let Ok(_lock) = FileLock::acquire(&lock_path(), LOCK_TIMEOUT) else {
+        return;
+    };
     let seq = match sequence::load() {
         Ok(s) => s,
         Err(_) => return,
     };
+    // Read identity and credentials under the same lock to guarantee they
+    // belong to the same account (prevents race with switch_to).
     let (email, org_uuid) = match current_identity() {
         Some(id) => id,
         None => return,
